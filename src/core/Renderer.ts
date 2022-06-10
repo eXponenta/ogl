@@ -1,3 +1,10 @@
+import type { Transform } from './Transform';
+import type { Camera } from './Camera';
+
+import { RenderTarget  } from './RenderTarget';
+import { RenderState } from './State';
+import { nextUUID } from './uuid';
+
 import { Vec3 } from '../math/Vec3.js';
 
 // TODO: Handle context loss https://www.khronos.org/webgl/wiki/HandlingContextLost
@@ -11,9 +18,80 @@ import { Vec3 } from '../math/Vec3.js';
 // gl.clearStencil( stencil );
 
 const tempVec3 = new Vec3();
-let ID = 1;
+
+export interface ISortable {
+    id: number;
+    zDepth: number;
+    renderOrder: number;
+    program: {
+        id: number;
+    }
+}
+
+type ISortedTraversable = Transform & ISortable;
+
+export interface IDrawable extends ISortedTraversable {
+    program: {
+        id: number;
+        transparent: boolean;
+        depthTest: boolean;
+    }
+    draw (...args: any[]): void;
+}
+
+export interface IRendererInit {
+    canvas: HTMLCanvasElement;
+    width: number;
+    height: number;
+    dpr: number;
+
+    alpha: boolean;
+    depth: boolean;
+    stencil: boolean;
+    antialias: boolean;
+    premultipliedAlpha: boolean;
+    preserveDrawingBuffer: boolean;
+    powerPreference: 'default' | 'high-performance';
+    autoClear: boolean;
+    webgl: 1 | 2;
+}
+
+export interface IRenderOptions {
+    scene: Transform;
+    camera: Camera;
+    target?: RenderTarget;
+    update?: boolean; 
+    sort?: boolean;
+    frustumCull?: boolean;
+    clear?: boolean; 
+}
+
+export type GLContext = (WebGL2RenderingContext | WebGLRenderingContext) & { renderer?: Renderer };
 
 export class Renderer {
+    public dpr: number;
+    public alpha: boolean;
+    public color: boolean;
+    public depth: boolean;
+    public stencil: boolean;
+    public premultipliedAlpha: boolean;
+    public autoClear: boolean;
+
+    public width: number = 0;
+    public height: number = 0;
+
+    public readonly id: number;
+    public readonly gl: GLContext;
+    public readonly isWebgl2: boolean;
+
+    // gl state stores to avoid redundant calls on methods used internally
+    public readonly state: RenderState;
+
+    // store requested extensions
+    public readonly extensions: Record<string, any>;
+
+    public parameters: Record<string, number>;
+
     constructor({
         canvas = document.createElement('canvas'),
         width = 300,
@@ -28,8 +106,17 @@ export class Renderer {
         powerPreference = 'default',
         autoClear = true,
         webgl = 2,
-    } = {}) {
-        const attributes = { alpha, depth, stencil, antialias, premultipliedAlpha, preserveDrawingBuffer, powerPreference };
+    }: Partial<IRendererInit> = {}) {
+        const attributes: WebGLContextAttributes = { 
+            alpha, 
+            depth, 
+            stencil, 
+            antialias, 
+            premultipliedAlpha, 
+            preserveDrawingBuffer, 
+            powerPreference
+        };
+ 
         this.dpr = dpr;
         this.alpha = alpha;
         this.color = true;
@@ -37,7 +124,7 @@ export class Renderer {
         this.stencil = stencil;
         this.premultipliedAlpha = premultipliedAlpha;
         this.autoClear = autoClear;
-        this.id = ID++;
+        this.id = nextUUID();
 
         // Attempt WebGL2 unless forced to 1, if not supported fallback to WebGL1
         if (webgl === 2) this.gl = canvas.getContext('webgl2', attributes);
@@ -51,26 +138,8 @@ export class Renderer {
         // initialise size values
         this.setSize(width, height);
 
-        // gl state stores to avoid redundant calls on methods used internally
-        this.state = {};
-        this.state.blendFunc = { src: this.gl.ONE, dst: this.gl.ZERO };
-        this.state.blendEquation = { modeRGB: this.gl.FUNC_ADD };
-        this.state.cullFace = null;
-        this.state.frontFace = this.gl.CCW;
-        this.state.depthMask = true;
-        this.state.depthFunc = this.gl.LESS;
-        this.state.premultiplyAlpha = false;
-        this.state.flipY = false;
-        this.state.unpackAlignment = 4;
-        this.state.framebuffer = null;
-        this.state.viewport = { x: 0, y: 0, width: null, height: null };
-        this.state.textureUnits = [];
-        this.state.activeTextureUnit = 0;
-        this.state.boundBuffer = null;
-        this.state.uniformLocations = new Map();
-        this.state.currentProgram = null;
+        this.state = new RenderState();
 
-        // store requested extensions
         this.extensions = {};
 
         // Initialise extra format types
@@ -112,7 +181,21 @@ export class Renderer {
             : 0;
     }
 
-    setSize(width, height) {
+    vertexAttribDivisor(...params: Parameters<WebGL2RenderingContext['vertexAttribDivisor']>) { };
+
+    drawArraysInstanced(...params: Parameters<WebGL2RenderingContext['drawArraysInstanced']>) { };
+
+    drawElementsInstanced(...params: Parameters<WebGL2RenderingContext['drawElementsInstanced']>) { };
+
+    createVertexArray(...params: Parameters<WebGL2RenderingContext['createVertexArray']>) { };
+
+    bindVertexArray(...params: Parameters<WebGL2RenderingContext['bindVertexArray']>) { };
+
+    deleteVertexArray(...params: Parameters<WebGL2RenderingContext['deleteVertexArray']>) { };
+
+    drawBuffers(...params: Parameters<WebGL2RenderingContext['drawBuffers']>) { };
+
+    setSize(width: number, height: number) {
         this.width = width;
         this.height = height;
 
@@ -125,7 +208,7 @@ export class Renderer {
         });
     }
 
-    setViewport(width, height, x = 0, y = 0) {
+    setViewport(width: number, height: number, x = 0, y = 0) {
         if (this.state.viewport.width === width && this.state.viewport.height === height) return;
         this.state.viewport.width = width;
         this.state.viewport.height = height;
@@ -134,23 +217,23 @@ export class Renderer {
         this.gl.viewport(x, y, width, height);
     }
 
-    setScissor(width, height, x = 0, y = 0) {
+    setScissor(width: number, height: number, x = 0, y = 0) {
         this.gl.scissor(x, y, width, height);
     }
 
-    enable(id) {
+    enable(id: GLenum) {
         if (this.state[id] === true) return;
         this.gl.enable(id);
         this.state[id] = true;
     }
 
-    disable(id) {
+    disable(id: GLenum) {
         if (this.state[id] === false) return;
         this.gl.disable(id);
         this.state[id] = false;
     }
 
-    setBlendFunc(src, dst, srcAlpha, dstAlpha) {
+    setBlendFunc(src: GLenum, dst: GLenum, srcAlpha?: GLenum, dstAlpha?: GLenum) {
         if (
             this.state.blendFunc.src === src &&
             this.state.blendFunc.dst === dst &&
@@ -162,11 +245,12 @@ export class Renderer {
         this.state.blendFunc.dst = dst;
         this.state.blendFunc.srcAlpha = srcAlpha;
         this.state.blendFunc.dstAlpha = dstAlpha;
+
         if (srcAlpha !== undefined) this.gl.blendFuncSeparate(src, dst, srcAlpha, dstAlpha);
         else this.gl.blendFunc(src, dst);
     }
 
-    setBlendEquation(modeRGB, modeAlpha) {
+    setBlendEquation(modeRGB: GLenum, modeAlpha?: GLenum) {
         modeRGB = modeRGB || this.gl.FUNC_ADD;
         if (this.state.blendEquation.modeRGB === modeRGB && this.state.blendEquation.modeAlpha === modeAlpha) return;
         this.state.blendEquation.modeRGB = modeRGB;
@@ -175,31 +259,31 @@ export class Renderer {
         else this.gl.blendEquation(modeRGB);
     }
 
-    setCullFace(value) {
+    setCullFace(value: GLenum) {
         if (this.state.cullFace === value) return;
         this.state.cullFace = value;
         this.gl.cullFace(value);
     }
 
-    setFrontFace(value) {
+    setFrontFace(value: GLenum) {
         if (this.state.frontFace === value) return;
         this.state.frontFace = value;
         this.gl.frontFace(value);
     }
 
-    setDepthMask(value) {
+    setDepthMask(value: boolean) {
         if (this.state.depthMask === value) return;
         this.state.depthMask = value;
         this.gl.depthMask(value);
     }
 
-    setDepthFunc(value) {
+    setDepthFunc(value: GLenum) {
         if (this.state.depthFunc === value) return;
         this.state.depthFunc = value;
         this.gl.depthFunc(value);
     }
 
-    activeTexture(value) {
+    activeTexture(value: number) {
         if (this.state.activeTextureUnit === value) return;
         this.state.activeTextureUnit = value;
         this.gl.activeTexture(this.gl.TEXTURE0 + value);
@@ -211,7 +295,7 @@ export class Renderer {
         this.gl.bindFramebuffer(target, buffer);
     }
 
-    getExtension(extension, webgl2Func, extFunc) {
+    getExtension(extension: string, webgl2Func?: string, extFunc?: string) {
         // if webgl2 function supported, return func bound to gl context
         if (webgl2Func && this.gl[webgl2Func]) return this.gl[webgl2Func].bind(this.gl);
 
@@ -230,7 +314,7 @@ export class Renderer {
         return this.extensions[extension][extFunc].bind(this.extensions[extension]);
     }
 
-    sortOpaque(a, b) {
+    sortOpaque(a: ISortable, b: ISortable) {
         if (a.renderOrder !== b.renderOrder) {
             return a.renderOrder - b.renderOrder;
         } else if (a.program.id !== b.program.id) {
@@ -242,7 +326,7 @@ export class Renderer {
         }
     }
 
-    sortTransparent(a, b) {
+    sortTransparent(a: ISortable, b: ISortable) {
         if (a.renderOrder !== b.renderOrder) {
             return a.renderOrder - b.renderOrder;
         }
@@ -253,7 +337,7 @@ export class Renderer {
         }
     }
 
-    sortUI(a, b) {
+    sortUI(a: ISortable, b: ISortable) {
         if (a.renderOrder !== b.renderOrder) {
             return a.renderOrder - b.renderOrder;
         } else if (a.program.id !== b.program.id) {
@@ -263,8 +347,8 @@ export class Renderer {
         }
     }
 
-    getRenderList({ scene, camera, frustumCull, sort }) {
-        let renderList = [];
+    getRenderList({ scene, camera, frustumCull, sort }): IDrawable[] {
+        let renderList: Array<IDrawable> = [];
 
         if (camera && frustumCull) camera.updateFrustum();
 
@@ -316,7 +400,15 @@ export class Renderer {
         return renderList;
     }
 
-    render({ scene, camera, target = null, update = true, sort = true, frustumCull = true, clear }) {
+    render({ 
+        scene, 
+        camera, 
+        target = null, 
+        update = true, 
+        sort = true, 
+        frustumCull = true, 
+        clear 
+    }: IRenderOptions) {
         if (target === null) {
             // make sure no render target bound so draws to canvas
             this.bindFramebuffer();

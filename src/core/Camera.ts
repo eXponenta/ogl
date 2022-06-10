@@ -6,13 +6,62 @@ const tempMat4 = new Mat4();
 const tempVec3a = new Vec3();
 const tempVec3b = new Vec3();
 
-export class Camera extends Transform {
-    constructor(gl, { near = 0.1, far = 100, fov = 45, aspect = 1, left, right, bottom, top, zoom = 1 } = {}) {
+export interface IBaseCameraInti {
+    near: number;
+    far: number;
+}
+
+export interface IOrhoCameraInit extends IBaseCameraInti {
+    left: number;
+    right: number;
+    bottom: number;
+    top: number;
+    zoom: number;
+}
+
+export interface IPerspectiveCameraInit extends IBaseCameraInti {
+    fov: number;
+    aspect: number;
+}
+
+export type ICamera = Partial<IOrhoCameraInit & IPerspectiveCameraInit> & { type: 'orthographic' | 'perspective' };
+
+export class Camera extends Transform implements ICamera {
+    public readonly projectionMatrix: Mat4 = new Mat4();
+    public readonly viewMatrix: Mat4 = new Mat4();
+    public readonly projectionViewMatrix: Mat4 = new Mat4();
+    public readonly worldPosition: Mat4 = new Vec3();
+
+    public frustum: Array<Vec3>;
+
+    public type: 'orthographic' | 'perspective';
+
+    public near?: number;
+    public far?: number;
+    public fov?: number;
+    public aspect?: number;
+
+    public left?: number;
+    public right?: number;
+    public top?: number;
+    public bottom?: number;
+    public zoom?: number;
+
+    constructor(gl, { 
+        near = 0.1, 
+        far = 100, 
+        fov = 45, 
+        aspect = 1, 
+        left, 
+        right, 
+        bottom, 
+        top, 
+        zoom = 1 
+    }: Partial<IOrhoCameraInit & IPerspectiveCameraInit> = {}) {
         super();
 
         Object.assign(this, { near, far, fov, aspect, left, right, bottom, top, zoom });
 
-        this.projectionMatrix = new Mat4();
         this.viewMatrix = new Mat4();
         this.projectionViewMatrix = new Mat4();
         this.worldPosition = new Vec3();
@@ -60,20 +109,20 @@ export class Camera extends Transform {
         return this;
     }
 
-    lookAt(target) {
+    lookAt(target: Transform) {
         super.lookAt(target, true);
         return this;
     }
 
     // Project 3D coordinate to 2D point
-    project(v) {
+    project(v: Vec3) {
         v.applyMatrix4(this.viewMatrix);
         v.applyMatrix4(this.projectionMatrix);
         return this;
     }
 
     // Unproject 2D point to 3D coordinate
-    unproject(v) {
+    unproject(v: Vec3) {
         v.applyMatrix4(tempMat4.inverse(this.projectionMatrix));
         v.applyMatrix4(this.worldMatrix);
         return this;
@@ -99,7 +148,7 @@ export class Camera extends Transform {
         }
     }
 
-    frustumIntersectsMesh(node) {
+    frustumIntersectsMesh(node): boolean {
         // If no position attribute, treat as frustumCulled false
         if (!node.geometry.attributes.position) return true;
 
@@ -116,7 +165,7 @@ export class Camera extends Transform {
         return this.frustumIntersectsSphere(center, radius);
     }
 
-    frustumIntersectsSphere(center, radius) {
+    frustumIntersectsSphere(center: number, radius: number): boolean {
         const normal = tempVec3b;
 
         for (let i = 0; i < 6; i++) {
