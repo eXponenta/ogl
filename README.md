@@ -4,11 +4,11 @@
 This is version has a some [differences](./DIFFERENCES.MD) of [original version!](https://github.com/oframe/ogl)
 <br />
 
-[See the Examples!](https://exponenta.github.io/ogl/examples)
+[See the Examples!](https://exponenta.github.io/ogl-extend/examples)
 
 ## Examples
 
-[Show me what you got!](https://exponenta.github.io/ogl/examples) - Explore a comprehensive list of examples, with comments in the source code.
+[Show me what you got!](https://exponenta.github.io/ogl-extend/examples) - Explore a comprehensive list of examples, with comments in the source code.
 
 ## Usage
 
