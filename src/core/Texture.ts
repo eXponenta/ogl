@@ -137,19 +137,8 @@ export class Texture<T extends IImageSource = null> implements IDisposable {
         this.anisotropy = Math.min(anisotropy, this.gl.renderer.parameters.maxAnisotropy);
         this.level = level;
 
-        if (this.image) {
-            if (Array.isArray(this.image)) {
-                this.width = this.image[0].width;
-                this.height = this.image[0].height;
-            } else {
-                this.width = this.image.width;
-                this.height = this.image.height;
-            }
-        } else {
-            this.width = (<IEmptyTextureInit> other).width || 0;
-            this.height = (<IEmptyTextureInit> other).height || this.width;
-        }
-
+        this.width = (other as IEmptyTextureInit).width;
+        this.height = (other as IEmptyTextureInit).height || this.width;
         this.texture = this.gl.createTexture();
 
         this.store = {
@@ -275,7 +264,7 @@ export class Texture<T extends IImageSource = null> implements IDisposable {
 
             if (this.generateMipmaps) {
                 // For WebGL1, if not a power of 2, turn off mips, set wrapping to clamp to edge and minFilter to linear
-                if (!this.gl.renderer.isWebgl2 && (!isPowerOf2(this.width) || !isPowerOf2(this.height))) {
+                if (!this.gl.renderer.isWebgl2 && (!isPowerOf2((this.image as any).width) || !isPowerOf2((this.image as any).height))) {
                     this.generateMipmaps = false;
                     this.wrapS = this.wrapT = this.gl.CLAMP_TO_EDGE;
                     this.minFilter = this.gl.LINEAR;
