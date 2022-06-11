@@ -1,5 +1,5 @@
-import { Geometry } from '../core/Geometry';
-import { GLContext } from '../core/Renderer';
+import { Geometry } from '../core/Geometry.js';
+import { GLContext } from '../core/Renderer.js';
 
 export class Triangle extends Geometry {
     constructor(gl: GLContext, { attributes = {} } = {}) {

@@ -1,8 +1,8 @@
-import { WritableArrayLike } from './functions/Mat3Func';
-import * as Vec3Func from './functions/Vec3Func';
-import type { Mat3 } from './Mat3';
-import type { Mat4 } from './Mat4';
-import type { Quat } from './Quat';
+import { WritableArrayLike } from './functions/Mat3Func.js';
+import * as Vec3Func from './functions/Vec3Func.js';
+import type { Mat3 } from './Mat3.js';
+import type { Mat4 } from './Mat4.js';
+import type { Quat } from './Quat.js';
 
 export class Vec3 extends Array<number> {
     constructor(x = 0, y = x, z = x) {

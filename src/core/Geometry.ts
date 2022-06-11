@@ -15,11 +15,11 @@
 // }
 
 // TODO: fit in transform feedback
-import { IDisposable } from './IDisposable';
-import { Program } from './Program';
-import { GLContext } from './Renderer';
-import { RenderState } from './State';
-import { nextUUID } from './uuid';
+import type{ IDisposable } from './IDisposable';
+import { Program } from './Program.js';
+import { GLContext } from './Renderer.js';
+import { RenderState } from './State.js';
+import { nextUUID } from './uuid.js';
 
 import { Vec3 } from '../math/Vec3.js';
 

@@ -1,6 +1,6 @@
-import { Geometry } from '../core/Geometry';
-import { GLContext } from '../core/Renderer';
-import { IPlaneGeomInit, Plane } from './Plane';
+import { Geometry } from '../core/Geometry.js';
+import { GLContext } from '../core/Renderer.js';
+import { IPlaneGeomInit, Plane } from './Plane.js';
 
 export interface IBoxGeometryInit extends IPlaneGeomInit {
     depth: number;

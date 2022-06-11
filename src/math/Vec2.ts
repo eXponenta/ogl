@@ -1,7 +1,7 @@
-import { WritableArrayLike } from './functions/Mat3Func';
-import * as Vec2Func from './functions/Vec2Func';
-import type { Mat3 } from './Mat3';
-import type { Mat4 } from './Mat4';
+import { WritableArrayLike } from './functions/Mat3Func.js';
+import * as Vec2Func from './functions/Vec2Func.js';
+import type { Mat3 } from './Mat3.js';
+import type { Mat4 } from './Mat4.js';
 
 export class Vec2 extends Array<number> {
     constructor(x = 0, y = x) {

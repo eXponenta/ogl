@@ -1,7 +1,7 @@
-import * as Mat4Func from './functions/Mat4Func';
-import type { Vec3 } from './Vec3';
-import type { Quat } from './Quat';
-import type { WritableArrayLike } from './functions/Mat3Func';
+import * as Mat4Func from './functions/Mat4Func.js';
+import type { Vec3 } from './Vec3.js';
+import type { Quat } from './Quat.js';
+import type { WritableArrayLike } from './functions/Mat3Func.js';
 
 export class Mat4 extends Array<number> {
     constructor(

@@ -1,5 +1,5 @@
-import type { WritableArrayLike } from './functions/Mat3Func';
-import * as Vec4Func from './functions/Vec4Func';
+import type { WritableArrayLike } from './functions/Mat3Func.js';
+import * as Vec4Func from './functions/Vec4Func.js';
 
 export class Vec4 extends Array<number> {
     constructor(x = 0, y = x, z = x, w = x) {

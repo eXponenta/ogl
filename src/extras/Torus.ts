@@ -1,8 +1,8 @@
 // https://github.com/mrdoob/three.js/blob/master/src/geometries/TorusGeometry.js
 
-import { Geometry, IGeometryAttribute } from '../core/Geometry';
-import { GLContext } from '../core/Renderer';
-import { Vec3 } from '../math/Vec3';
+import { Geometry, IGeometryAttribute } from '../core/Geometry.js';
+import { GLContext } from '../core/Renderer.js';
+import { Vec3 } from '../math/Vec3.js';
 
 export interface ITorusGeometryInit {
     radius: number;

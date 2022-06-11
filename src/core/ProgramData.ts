@@ -4,8 +4,8 @@
  */
 
 import { IDisposable } from "./IDisposable";
-import { GLContext } from "./Renderer";
-import { nextUUID } from "./uuid";
+import { GLContext } from "./Renderer.js";
+import { nextUUID } from "./uuid.js";
 
 export interface IProgramSource {
     vertex: string;
@@ -32,7 +32,7 @@ export class ProgramData implements IDisposable, IProgramSource {
         if (!store) return new ProgramData(gl, { vertex, fragment });
 
         const program = store.get(vertex + fragment);
-        
+
         if (!program) return new ProgramData(gl, { vertex, fragment });
 
         program.usage ++;
@@ -62,7 +62,7 @@ export class ProgramData implements IDisposable, IProgramSource {
     }
 
     /**
-     * Delete program data from cache 
+     * Delete program data from cache
      */
     static delete (gl, programData) {
         if (!programData || !programData.key) return false;
@@ -197,7 +197,7 @@ export class ProgramData implements IDisposable, IProgramSource {
     }
 
     destroy(): void {
-        this.remove();        
+        this.remove();
     }
 
     remove() {

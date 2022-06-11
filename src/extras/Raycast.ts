@@ -1,12 +1,12 @@
 // TODO: barycentric code shouldn't be here, but where?
 // TODO: SphereCast?
 
-import { Vec2 } from '../math/Vec2';
-import { Vec3 } from '../math/Vec3';
-import { Mat4 } from '../math/Mat4';
-import { Camera } from '../core/Camera';
-import { Mesh } from '../core/Mesh';
-import { IGeometryBounds } from '../core/Geometry';
+import { Vec2 } from '../math/Vec2.js';
+import { Vec3 } from '../math/Vec3.js';
+import { Mat4 } from '../math/Mat4.js';
+import { Camera } from '../core/Camera.js';
+import { Mesh } from '../core/Mesh.js';
+import { IGeometryBounds } from '../core/Geometry.js';
 
 const tempVec2a = new Vec2();
 const tempVec2b = new Vec2();

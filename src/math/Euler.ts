@@ -1,6 +1,6 @@
-import * as EulerFunc from './functions/EulerFunc';
-import type { Quat } from './Quat';
-import { Mat4 } from './Mat4';
+import * as EulerFunc from './functions/EulerFunc.js';
+import type { Quat } from './Quat.js';
+import { Mat4 } from './Mat4.js';
 
 const tmpMat4 = new Mat4();
 

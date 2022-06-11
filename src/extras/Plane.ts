@@ -1,5 +1,5 @@
-import { Geometry, IGeometryAttribute } from '../core/Geometry';
-import { GLContext } from '../core/Renderer';
+import { Geometry, IGeometryAttribute } from '../core/Geometry.js';
+import { GLContext } from '../core/Renderer.js';
 
 export interface IPlaneGeomInit {
     width: number;

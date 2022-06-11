@@ -1,9 +1,8 @@
-import type { Transform } from './Transform';
-import type { Camera } from './Camera';
-
-import { RenderTarget  } from './RenderTarget';
-import { RenderState } from './State';
-import { nextUUID } from './uuid';
+import type { Transform } from './Transform.js';
+import type { Camera } from './Camera.js';
+import type { RenderTarget  } from './RenderTarget.js';
+import { RenderState } from './State.js';
+import { nextUUID } from './uuid.js';
 
 import { Vec3 } from '../math/Vec3.js';
 

@@ -1,4 +1,4 @@
-import type { WritableArrayLike } from "./Mat3Func";
+import type { WritableArrayLike } from "./Mat3Func.js";
 
 const EPSILON = 0.000001;
 

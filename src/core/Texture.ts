@@ -4,9 +4,9 @@
 // TODO: support non-compressed mipmaps uploads
 
 import type { IDisposable } from "./IDisposable";
-import type { GLContext } from "./Renderer";
-import { RenderState } from "./State";
-import { nextUUID } from "./uuid";
+import type { GLContext } from "./Renderer.js";
+import type { RenderState } from "./State.js";
+import { nextUUID } from "./uuid.js";
 
 const emptyPixel = new Uint8Array(4);
 
@@ -22,11 +22,11 @@ export interface ICompressedImageData extends Array<ICompressedImageFrame> {
     isCompressedTexture: boolean;
 }
 
-export type INativeImageSource = 
-    HTMLCanvasElement | 
-    HTMLImageElement | 
-    ImageBitmap | 
-    HTMLVideoElement | 
+export type INativeImageSource =
+    HTMLCanvasElement |
+    HTMLImageElement |
+    ImageBitmap |
+    HTMLVideoElement |
     null;
 
 export type IImageSource = INativeImageSource | ICompressedImageData | null;
@@ -147,7 +147,7 @@ export class Texture<T extends IImageSource = null> implements IDisposable {
             }
         } else {
             this.width = (<IEmptyTextureInit> other).width || 0;
-            this.height = (<IEmptyTextureInit> other).height || this.width;          
+            this.height = (<IEmptyTextureInit> other).height || this.width;
         }
 
         this.texture = this.gl.createTexture();

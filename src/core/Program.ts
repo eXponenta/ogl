@@ -2,11 +2,11 @@
 // TODO: upload identity matrix if null ?
 // TODO: sampler Cube
 
-import { IDisposable } from "./IDisposable";
-import { IProgramSource, ProgramData } from "./ProgramData";
-import { GLContext } from "./Renderer";
-import { IBlendEquationState, IBlendFuncState } from "./State";
-import { nextUUID } from "./uuid";
+import type { IDisposable } from "./IDisposable";
+import { IProgramSource, ProgramData } from "./ProgramData.js";
+import { GLContext } from "./Renderer.js";
+import { IBlendEquationState, IBlendFuncState } from "./State.js";
+import { nextUUID } from "./uuid.js";
 
 // cache of typed arrays used to flatten uniform arrays
 const arrayCacheF32 = {};

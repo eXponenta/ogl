@@ -8,7 +8,7 @@ export class Transform {
 
     public parent: Transform = null;
 
-    public readonly children: Transform[] = null;
+    public readonly children: Transform[] = [];
 
     public visible: boolean = true;
 

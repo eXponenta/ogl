@@ -1,7 +1,7 @@
 // TODO: test stencil and depth
-import { IDisposable } from './IDisposable';
-import { GLContext } from './Renderer';
-import { Texture, ITextureStyleInit } from './Texture';
+import type { IDisposable } from './IDisposable';
+import type { GLContext } from './Renderer.js';
+import { Texture, ITextureStyleInit } from './Texture.js';
 
 export interface IRenderTargetInit extends ITextureStyleInit {
     width: number;
@@ -171,7 +171,7 @@ export class RenderTarget implements IDisposable {
     }
 
     destroy(): void {
-        // todo 
+        // todo
         // implement it
     }
 }

@@ -18,16 +18,16 @@ export function hexToRGB(hex: string) {
 }
 
 export function numberToRGB(num: number | string) {
-    num = Number.parseInt('' + num);
+    num = typeof num === 'number' ? num : Number.parseInt(num);
     return [((num >> 16) & 255) / 255, ((num >> 8) & 255) / 255, (num & 255) / 255];
 }
 
 export function parseColor(...color: any[]) {
     // Empty
-    if (color === undefined) return [0, 0, 0];
+    if (color.length === 0) return [0, 0, 0];
 
     // Decimal
-    if (arguments.length === 3) return color;
+    if (color.length === 3) return color;
 
     // Number
     if (!isNaN(color[0])) return numberToRGB(color[0]);

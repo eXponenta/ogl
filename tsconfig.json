@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
-      "outDir": "dist",
+      "allowJs": true,
+      "outDir": "./dist",
       "target": "es2017",
       "module": "ESNext",
       "lib": ["ESNext", "dom"],
@@ -9,9 +10,8 @@
       "pretty": true,
       "skipLibCheck": true,
       "declaration": true,
-      "emitDeclarationOnly": true,
       "forceConsistentCasingInFileNames": true,
-      "declarationDir": "types"
+      "declarationDir": "./types"
     },
-    "include": ["src/**/*"]
+    "include": ["./src/**/*"]
   }
