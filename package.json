@@ -1,7 +1,7 @@
 {
-    "name": "ogl",
-    "version": "0.0.93",
-    "description": "WebGL Library",
+    "name": "ogl-extend",
+    "version": "0.1.1-a",
+    "description": "WebGL Library based on Ogl",
     "module": "dist/index.mjs",
     "types": "types/index.d.ts",
     "sideEffects": false,
@@ -10,22 +10,25 @@
     },
     "scripts": {
         "prebuild": "rimraf ./dist && rimraf ./types",
-        "build": "tsc"
+        "build": "tsc",
+        "preversion": "npm run build"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://gordonnl@github.com/oframe/ogl.git"
+        "url": "git+https://exponenta@github.com/ogl.git"
     },
-    "author": {
-        "name": "Nathan Gordon",
-        "email": "gordonnl@gmail.com",
-        "url": "https://twitter.com/gordonnl"
-    },
-    "license": "Unlicense",
+    "contributors": [
+        {
+            "name": "Nathan Gordon",
+            "email": "gordonnl@gmail.com",
+            "url": "https://twitter.com/gordonnl"
+        }
+    ],
+    "license": "MIT",
     "bugs": {
-        "url": "https://github.com/oframe/ogl/issues"
+        "url": "https://github.com/exponenta/ogl/issues"
     },
-    "homepage": "https://github.com/oframe/ogl#readme",
+    "homepage": "https://github.com/exponenta/ogl#readme",
     "prettier": {
         "arrowParens": "always",
         "bracketSpacing": true,

@@ -1,0 +1,61 @@
+export function Orbit(object: any, { element, enabled, target, ease, inertia, enableRotate, rotateSpeed, autoRotate, autoRotateSpeed, enableZoom, zoomSpeed, zoomStyle, enablePan, panSpeed, minPolarAngle, maxPolarAngle, minAzimuthAngle, maxAzimuthAngle, minDistance, maxDistance, }?: {
+    element?: Document;
+    enabled?: boolean;
+    target?: Vec3;
+    ease?: number;
+    inertia?: number;
+    enableRotate?: boolean;
+    rotateSpeed?: number;
+    autoRotate?: boolean;
+    autoRotateSpeed?: number;
+    enableZoom?: boolean;
+    zoomSpeed?: number;
+    zoomStyle?: string;
+    enablePan?: boolean;
+    panSpeed?: number;
+    minPolarAngle?: number;
+    maxPolarAngle?: number;
+    minAzimuthAngle?: number;
+    maxAzimuthAngle?: number;
+    minDistance?: number;
+    maxDistance?: number;
+}): void;
+export class Orbit {
+    constructor(object: any, { element, enabled, target, ease, inertia, enableRotate, rotateSpeed, autoRotate, autoRotateSpeed, enableZoom, zoomSpeed, zoomStyle, enablePan, panSpeed, minPolarAngle, maxPolarAngle, minAzimuthAngle, maxAzimuthAngle, minDistance, maxDistance, }?: {
+        element?: Document;
+        enabled?: boolean;
+        target?: Vec3;
+        ease?: number;
+        inertia?: number;
+        enableRotate?: boolean;
+        rotateSpeed?: number;
+        autoRotate?: boolean;
+        autoRotateSpeed?: number;
+        enableZoom?: boolean;
+        zoomSpeed?: number;
+        zoomStyle?: string;
+        enablePan?: boolean;
+        panSpeed?: number;
+        minPolarAngle?: number;
+        maxPolarAngle?: number;
+        minAzimuthAngle?: number;
+        maxAzimuthAngle?: number;
+        minDistance?: number;
+        maxDistance?: number;
+    });
+    enabled: boolean;
+    target: Vec3;
+    zoomStyle: string;
+    minDistance: number;
+    maxDistance: number;
+    offset: Vec3;
+    update: () => void;
+    forcePosition: () => void;
+    mouseButtons: {
+        ORBIT: number;
+        ZOOM: number;
+        PAN: number;
+    };
+    remove: () => void;
+}
+import { Vec3 } from "../math/Vec3.js";
