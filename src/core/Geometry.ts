@@ -81,7 +81,6 @@ export class Geometry implements IDisposable {
 
         // Unbind current VAO so that new buffers don't get added to active mesh
         this.gl.renderer.bindVertexArray(null);
-        this.gl.renderer.currentGeometry = null;
 
         // Alias for state store to avoid redundant calls for global state
         this.glState = this.gl.renderer.state;
@@ -137,10 +136,9 @@ export class Geometry implements IDisposable {
     updateAttribute(attr: Partial<IGeometryAttribute>) {
         const isNewBuffer = !attr.buffer;
         if (isNewBuffer) attr.buffer = this.gl.createBuffer();
-        if (this.glState.boundBuffer !== attr.buffer) {
-            this.gl.bindBuffer(attr.target, attr.buffer);
-            this.glState.boundBuffer = attr.buffer;
-        }
+
+        this.gl.renderer.bindBuffer(attr.target, attr.buffer);
+
         if (isNewBuffer) {
             this.gl.bufferData(attr.target, attr.data, attr.usage);
         } else {
@@ -180,7 +178,6 @@ export class Geometry implements IDisposable {
             const attr = this.attributes[name];
 
             this.gl.bindBuffer(attr.target, attr.buffer);
-            this.glState.boundBuffer = attr.buffer;
 
             // For matrix attributes, buffer needs to be defined per column
             let numLoc = 1;
@@ -207,11 +204,8 @@ export class Geometry implements IDisposable {
     }
 
     draw({ program, mode = this.gl.TRIANGLES }) {
-        if (this.gl.renderer.currentGeometry !== `${this.id}_${program.attributeOrder}`) {
-            if (!this.VAOs[program.attributeOrder]) this.createVAO(program);
-            this.gl.renderer.bindVertexArray(this.VAOs[program.attributeOrder]);
-            this.gl.renderer.currentGeometry = `${this.id}_${program.attributeOrder}`;
-        }
+        if (!this.VAOs[program.attributeOrder]) this.createVAO(program);
+        this.gl.renderer.bindVertexArray(this.VAOs[program.attributeOrder]);
 
         // Check if any attributes need updating
         program.attributeLocations.forEach((location, { name }) => {

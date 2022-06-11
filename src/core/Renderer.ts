@@ -172,9 +172,11 @@ export class Renderer {
         this.vertexAttribDivisor = this.getExtension('ANGLE_instanced_arrays', 'vertexAttribDivisor', 'vertexAttribDivisorANGLE');
         this.drawArraysInstanced = this.getExtension('ANGLE_instanced_arrays', 'drawArraysInstanced', 'drawArraysInstancedANGLE');
         this.drawElementsInstanced = this.getExtension('ANGLE_instanced_arrays', 'drawElementsInstanced', 'drawElementsInstancedANGLE');
-        this.createVertexArray = this.getExtension('OES_vertex_array_object', 'createVertexArray', 'createVertexArrayOES');
-        this.bindVertexArray = this.getExtension('OES_vertex_array_object', 'bindVertexArray', 'bindVertexArrayOES');
-        this.deleteVertexArray = this.getExtension('OES_vertex_array_object', 'deleteVertexArray', 'deleteVertexArrayOES');
+
+        this._createVertexArray = this.getExtension('OES_vertex_array_object', 'createVertexArray', 'createVertexArrayOES');
+        this._bindVertexArray = this.getExtension('OES_vertex_array_object', 'bindVertexArray', 'bindVertexArrayOES');
+        this._deleteVertexArray = this.getExtension('OES_vertex_array_object', 'deleteVertexArray', 'deleteVertexArrayOES');
+
         this.drawBuffers = this.getExtension('WEBGL_draw_buffers', 'drawBuffers', 'drawBuffersWEBGL');
 
         // Store device parameters
@@ -191,13 +193,53 @@ export class Renderer {
 
     drawElementsInstanced(...params: Parameters<WebGL2RenderingContext['drawElementsInstanced']>) { };
 
-    createVertexArray(...params: Parameters<WebGL2RenderingContext['createVertexArray']>): WebGLVertexArrayObject { return null };
+    _createVertexArray(...params: Parameters<WebGL2RenderingContext['createVertexArray']>): WebGLVertexArrayObject { return null };
 
-    bindVertexArray(...params: Parameters<WebGL2RenderingContext['bindVertexArray']>) { };
+    _bindVertexArray(...params: Parameters<WebGL2RenderingContext['bindVertexArray']>) { };
 
-    deleteVertexArray(...params: Parameters<WebGL2RenderingContext['deleteVertexArray']>) { };
+    _deleteVertexArray(...params: Parameters<WebGL2RenderingContext['deleteVertexArray']>) { };
 
     drawBuffers(...params: Parameters<WebGL2RenderingContext['drawBuffers']>) { };
+
+    /**
+     * Guarded version for valid VAO state
+     */
+    createVertexArray(...params: Parameters<WebGL2RenderingContext['createVertexArray']>): WebGLVertexArrayObject {
+        return this._createVertexArray(...params);
+    }
+
+    bindVertexArray(vao: WebGLVertexArrayObject) {
+
+        // allow to rebound buffer to vao
+        if (vao) this.state.boundBuffer = null;
+
+        if (this.state.currentVAO === vao) {
+            return;
+        }
+
+        this.state.currentVAO = vao;
+        this._bindVertexArray(vao);
+    }
+
+    deleteVertexArray(vao: WebGLVertexArrayObject) {
+        if (!vao) return;
+
+        // guarded, because some devices not like to remove active vao
+        if (this.state.currentVAO === vao) this.bindVertexArray(null);
+        this._deleteVertexArray(vao);
+    }
+
+    bindBuffer(target: GLenum, buffer: WebGLBuffer = null) {
+        if (this.state.boundBuffer === buffer) return;
+
+        this.state.boundBuffer = buffer;
+        this.gl.bindBuffer(target, buffer)
+    }
+
+    deleteBuffer(buffer: WebGLBuffer) {
+        if (this.state.boundBuffer === buffer) this.state.boundBuffer = null;
+        this.gl.deleteBuffer(buffer);
+    }
 
     setSize(width: number, height: number) {
         this.width = width;
