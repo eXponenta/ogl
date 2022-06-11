@@ -45,6 +45,12 @@ export class Euler extends Array {
         this.onChange();
         return this;
     }
+    clone() {
+        const clone = new Euler();
+        clone.order = this.order;
+        clone.copy(this);
+        return clone;
+    }
     reorder(order) {
         this.order = order;
         this.onChange();

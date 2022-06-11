@@ -71,9 +71,9 @@ export class Renderer {
         this.vertexAttribDivisor = this.getExtension('ANGLE_instanced_arrays', 'vertexAttribDivisor', 'vertexAttribDivisorANGLE');
         this.drawArraysInstanced = this.getExtension('ANGLE_instanced_arrays', 'drawArraysInstanced', 'drawArraysInstancedANGLE');
         this.drawElementsInstanced = this.getExtension('ANGLE_instanced_arrays', 'drawElementsInstanced', 'drawElementsInstancedANGLE');
-        this.createVertexArray = this.getExtension('OES_vertex_array_object', 'createVertexArray', 'createVertexArrayOES');
-        this.bindVertexArray = this.getExtension('OES_vertex_array_object', 'bindVertexArray', 'bindVertexArrayOES');
-        this.deleteVertexArray = this.getExtension('OES_vertex_array_object', 'deleteVertexArray', 'deleteVertexArrayOES');
+        this._createVertexArray = this.getExtension('OES_vertex_array_object', 'createVertexArray', 'createVertexArrayOES');
+        this._bindVertexArray = this.getExtension('OES_vertex_array_object', 'bindVertexArray', 'bindVertexArrayOES');
+        this._deleteVertexArray = this.getExtension('OES_vertex_array_object', 'deleteVertexArray', 'deleteVertexArrayOES');
         this.drawBuffers = this.getExtension('WEBGL_draw_buffers', 'drawBuffers', 'drawBuffersWEBGL');
         // Store device parameters
         this.parameters = {};
@@ -88,14 +88,49 @@ export class Renderer {
     ;
     drawElementsInstanced(...params) { }
     ;
-    createVertexArray(...params) { return null; }
+    _createVertexArray(...params) { return null; }
     ;
-    bindVertexArray(...params) { }
+    _bindVertexArray(...params) { }
     ;
-    deleteVertexArray(...params) { }
+    _deleteVertexArray(...params) { }
     ;
     drawBuffers(...params) { }
     ;
+    /**
+     * Guarded version for valid VAO state
+     */
+    createVertexArray(...params) {
+        return this._createVertexArray(...params);
+    }
+    bindVertexArray(vao) {
+        // allow to rebound buffer to vao
+        if (vao)
+            this.state.boundBuffer = null;
+        if (this.state.currentVAO === vao) {
+            return;
+        }
+        this.state.currentVAO = vao;
+        this._bindVertexArray(vao);
+    }
+    deleteVertexArray(vao) {
+        if (!vao)
+            return;
+        // guarded, because some devices not like to remove active vao
+        if (this.state.currentVAO === vao)
+            this.bindVertexArray(null);
+        this._deleteVertexArray(vao);
+    }
+    bindBuffer(target, buffer = null) {
+        if (this.state.boundBuffer === buffer)
+            return;
+        this.state.boundBuffer = buffer;
+        this.gl.bindBuffer(target, buffer);
+    }
+    deleteBuffer(buffer) {
+        if (this.state.boundBuffer === buffer)
+            this.state.boundBuffer = null;
+        this.gl.deleteBuffer(buffer);
+    }
     setSize(width, height) {
         this.width = width;
         this.height = height;

@@ -12,6 +12,7 @@ export declare class Vec2 extends Array<number> {
     set(x: number, y?: number): this;
     copy(v: Array<number>): this;
     copy(v: Vec2): this;
+    clone(): Vec2;
     add(va: Vec2, vb?: Vec2): this;
     sub(va: Vec2, vb?: Vec2): this;
     multiply(v: Vec2 | number): this;
@@ -30,7 +31,6 @@ export declare class Vec2 extends Array<number> {
     applyMatrix3(mat3: Mat3): this;
     applyMatrix4(mat4: Mat4): this;
     lerp(v: Vec2, a: number): this;
-    clone(): Vec2;
     fromArray(a: WritableArrayLike, o?: number): this;
     toArray(a?: WritableArrayLike, o?: number): WritableArrayLike;
 }

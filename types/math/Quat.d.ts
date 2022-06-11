@@ -23,6 +23,7 @@ export declare class Quat extends Array<number> {
     inverse(q?: Quat): this;
     conjugate(q?: Quat): this;
     copy(q: Array<number>): this;
+    clone(): Quat;
     normalize(q?: Quat): this;
     multiply(qA: Quat, qB?: Quat): this;
     dot(v: Quat): number;

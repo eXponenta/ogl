@@ -14,6 +14,7 @@ export declare class Vec3 extends Array<number> {
     set(x: Vec3): this;
     set(x: number, y?: number, z?: number): this;
     copy(v: Array<number>): this;
+    clone(): Vec3;
     add(va: Vec3, vb?: Vec3): this;
     sub(va: Vec3, vb?: Vec3): this;
     multiply(v: Vec3 | number): this;
@@ -35,7 +36,6 @@ export declare class Vec3 extends Array<number> {
     applyQuaternion(q: Quat): this;
     angle(v: Vec3): number;
     lerp(v: Vec3, t: number): this;
-    clone(): Vec3;
     fromArray(a: WritableArrayLike, o?: number): Vec3;
     toArray(a?: WritableArrayLike, o?: number): WritableArrayLike;
     transformDirection(mat4: Mat4): this;

@@ -75,6 +75,9 @@ export class Quat extends Array {
         this.onChange();
         return this;
     }
+    clone() {
+        return new Quat().copy(this);
+    }
     normalize(q = this) {
         QuatFunc.normalize(this, q);
         this.onChange();

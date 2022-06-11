@@ -70,10 +70,18 @@ export declare class Renderer {
     vertexAttribDivisor(...params: Parameters<WebGL2RenderingContext['vertexAttribDivisor']>): void;
     drawArraysInstanced(...params: Parameters<WebGL2RenderingContext['drawArraysInstanced']>): void;
     drawElementsInstanced(...params: Parameters<WebGL2RenderingContext['drawElementsInstanced']>): void;
-    createVertexArray(...params: Parameters<WebGL2RenderingContext['createVertexArray']>): WebGLVertexArrayObject;
-    bindVertexArray(...params: Parameters<WebGL2RenderingContext['bindVertexArray']>): void;
-    deleteVertexArray(...params: Parameters<WebGL2RenderingContext['deleteVertexArray']>): void;
+    _createVertexArray(...params: Parameters<WebGL2RenderingContext['createVertexArray']>): WebGLVertexArrayObject;
+    _bindVertexArray(...params: Parameters<WebGL2RenderingContext['bindVertexArray']>): void;
+    _deleteVertexArray(...params: Parameters<WebGL2RenderingContext['deleteVertexArray']>): void;
     drawBuffers(...params: Parameters<WebGL2RenderingContext['drawBuffers']>): void;
+    /**
+     * Guarded version for valid VAO state
+     */
+    createVertexArray(...params: Parameters<WebGL2RenderingContext['createVertexArray']>): WebGLVertexArrayObject;
+    bindVertexArray(vao: WebGLVertexArrayObject): void;
+    deleteVertexArray(vao: WebGLVertexArrayObject): void;
+    bindBuffer(target: GLenum, buffer?: WebGLBuffer): void;
+    deleteBuffer(buffer: WebGLBuffer): void;
     setSize(width: number, height: number): void;
     setViewport(width: number, height: number, x?: number, y?: number): void;
     setScissor(width: number, height: number, x?: number, y?: number): void;

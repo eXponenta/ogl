@@ -13,6 +13,7 @@ export declare class Vec4 extends Array<number> {
     set(x: Vec4): this;
     set(x: number, y?: number, z?: number, w?: number): this;
     copy(v: Array<number>): this;
+    clone(): Vec4;
     normalize(): this;
     multiply(v: number): this;
     dot(v: Vec4): number;

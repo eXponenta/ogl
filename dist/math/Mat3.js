@@ -39,6 +39,9 @@ export class Mat3 extends Array {
         Mat3Func.copy(this, m);
         return this;
     }
+    clone() {
+        return new Mat3().copy(this);
+    }
     fromMatrix4(m) {
         Mat3Func.fromMat4(this, m);
         return this;

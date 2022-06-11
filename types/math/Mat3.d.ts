@@ -11,6 +11,7 @@ export declare class Mat3 extends Array<number> {
     multiply(ma: Mat3, mb?: Mat3): this;
     identity(): this;
     copy(m: Array<number>): this;
+    clone(): Mat3;
     fromMatrix4(m: Mat4): this;
     fromQuaternion(q: Array<number>): this;
     fromBasis(vec3a: Vec3, vec3b: Vec3, vec3c: Vec3): this;

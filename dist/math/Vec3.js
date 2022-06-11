@@ -32,6 +32,9 @@ export class Vec3 extends Array {
         Vec3Func.copy(this, v);
         return this;
     }
+    clone() {
+        return new Vec3(this[0], this[1], this[2]);
+    }
     add(va, vb) {
         if (vb)
             Vec3Func.add(this, va, vb);
@@ -130,9 +133,6 @@ export class Vec3 extends Array {
     lerp(v, t) {
         Vec3Func.lerp(this, this, v, t);
         return this;
-    }
-    clone() {
-        return new Vec3(this[0], this[1], this[2]);
     }
     fromArray(a, o = 0) {
         this[0] = a[o];

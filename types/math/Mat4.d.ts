@@ -20,6 +20,7 @@ export declare class Mat4 extends Array<number> {
     multiply(ma: Mat4, mb: Mat4): this;
     identity(): this;
     copy(m: Array<number>): this;
+    clone(): Mat4;
     fromPerspective({ fov, aspect, near, far }: {
         fov: number;
         aspect: number;

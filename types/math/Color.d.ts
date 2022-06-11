@@ -12,5 +12,6 @@ export declare class Color extends Array<number> {
     set(color: Array<number>): this;
     set(color: string): this;
     set(r: number, g: number, b: number): this;
+    clone(): Color;
     copy(v: Array<number> | Color): this;
 }

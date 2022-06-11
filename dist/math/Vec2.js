@@ -26,6 +26,9 @@ export class Vec2 extends Array {
         Vec2Func.copy(this, v);
         return this;
     }
+    clone() {
+        return new Vec2(this[0], this[1]);
+    }
     add(va, vb) {
         if (vb)
             Vec2Func.add(this, va, vb);
@@ -111,9 +114,6 @@ export class Vec2 extends Array {
     lerp(v, a) {
         Vec2Func.lerp(this, this, v, a);
         return this;
-    }
-    clone() {
-        return new Vec2(this[0], this[1]);
     }
     fromArray(a, o = 0) {
         this[0] = a[o];

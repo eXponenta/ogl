@@ -16,6 +16,7 @@ export declare class Euler extends Array<number> {
     set(x: number, y?: number, z?: number): this;
     copy(copy: Euler): this;
     copy(copy: Array<number>): this;
+    clone(): Euler;
     reorder(order: EulerFunc.EulerOrder): this;
     fromRotationMatrix(m: Mat4, order?: EulerFunc.EulerOrder): this;
     fromQuaternion(q: Quat, order?: EulerFunc.EulerOrder): this;

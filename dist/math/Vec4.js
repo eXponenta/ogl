@@ -38,6 +38,9 @@ export class Vec4 extends Array {
         Vec4Func.copy(this, v);
         return this;
     }
+    clone() {
+        return new Vec4().copy(this);
+    }
     normalize() {
         Vec4Func.normalize(this, this);
         return this;
