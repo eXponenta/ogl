@@ -33,12 +33,12 @@ export class Mesh<G extends Geometry = Geometry, P extends Program = Program> ex
     private beforeRenderCallbacks: Array<IRenderCallback> = [];
     private afterRenderCallbacks: Array<IRenderCallback> = [];
 
-    constructor(gl: GLContext, { 
-        geometry, 
-        program, 
-        mode = gl.TRIANGLES, 
-        frustumCulled = true, 
-        renderOrder = 0 
+    constructor(gl: GLContext, {
+        geometry,
+        program,
+        mode = gl.TRIANGLES,
+        frustumCulled = true,
+        renderOrder = 0
     }: IMeshInit<G, P>) {
         super();
         if (!gl.canvas) console.error('gl not passed as first argument to Mesh');

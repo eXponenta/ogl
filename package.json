@@ -7,6 +7,9 @@
     "directories": {
         "example": "examples"
     },
+    "scripts": {
+        "build" : "tsc"
+    },
     "repository": {
         "type": "git",
         "url": "git+https://gordonnl@github.com/oframe/ogl.git"
@@ -33,5 +36,8 @@
         "tabWidth": 4,
         "trailingComma": "es5",
         "useTabs": false
+    },
+    "devDependencies": {
+        "typescript": "^4.7.3"
     }
 }
