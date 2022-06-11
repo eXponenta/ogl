@@ -1,9 +1,22 @@
-import { Geometry } from '../core/Geometry.js';
-import { Vec3 } from '../math/Vec3.js';
+import { Geometry, IGeometryAttribute } from '../core/Geometry';
+import { GLContext } from '../core/Renderer';
+import { Vec3 } from '../math/Vec3';
+
+export interface ICylinderGeometryInit{
+    radiusTop: number;
+    radiusBottom: number;
+    height: number;
+    radialSegments: number;
+    heightSegments: number;
+    openEnded: boolean;
+    thetaStart: number;
+    thetaLength: number;
+    attributes: Record<string, Partial<IGeometryAttribute>>;
+}
 
 export class Cylinder extends Geometry {
     constructor(
-        gl,
+        gl: GLContext,
         {
             radiusTop = 0.5,
             radiusBottom = 0.5,
@@ -14,7 +27,7 @@ export class Cylinder extends Geometry {
             thetaStart = 0,
             thetaLength = Math.PI * 2,
             attributes = {},
-        } = {}
+        }: Partial<ICylinderGeometryInit> = {}
     ) {
         const rSegs = radialSegments;
         const hSegs = heightSegments;

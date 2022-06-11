@@ -1,4 +1,4 @@
-import { WritableArrayLike } from './functions/Mat3Func.js';
+import { WritableArrayLike } from './functions/Mat3Func';
 import * as Vec2Func from './functions/Vec2Func';
 import type { Mat3 } from './Mat3';
 import type { Mat4 } from './Mat4';

@@ -1,7 +1,22 @@
-import { Geometry } from '../core/Geometry.js';
+import { Geometry, IGeometryAttribute } from '../core/Geometry';
+import { GLContext } from '../core/Renderer';
+
+export interface IPlaneGeomInit {
+    width: number;
+    height: number;
+    widthSegments: number;
+    heightSegments: number;
+    attributes: Record<string, Partial<IGeometryAttribute>>
+}
 
 export class Plane extends Geometry {
-    constructor(gl, { width = 1, height = 1, widthSegments = 1, heightSegments = 1, attributes = {} } = {}) {
+    constructor(gl: GLContext, {
+        width = 1,
+        height = 1,
+        widthSegments = 1,
+        heightSegments = 1,
+        attributes = {}
+    }: Partial<IPlaneGeomInit> = {}) {
         const wSegs = widthSegments;
         const hSegs = heightSegments;
 

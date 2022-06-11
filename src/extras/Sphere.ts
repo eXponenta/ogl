@@ -1,9 +1,21 @@
-import { Geometry } from '../core/Geometry.js';
-import { Vec3 } from '../math/Vec3.js';
+import { Geometry, IGeometryAttribute } from '../core/Geometry';
+import { GLContext } from '../core/Renderer';
+import { Vec3 } from '../math/Vec3';
+
+export interface ISphereGeometryInit {
+    radius: number;
+    widthSegments: number;
+    heightSegments: number;
+    phiStart: number;
+    phiLength: number;
+    thetaStart: number;
+    thetaLength: number;
+    attributes: Record<string, Partial<IGeometryAttribute>>,
+}
 
 export class Sphere extends Geometry {
     constructor(
-        gl,
+        gl: GLContext,
         {
             radius = 0.5,
             widthSegments = 16,
@@ -13,7 +25,7 @@ export class Sphere extends Geometry {
             thetaStart = 0,
             thetaLength = Math.PI,
             attributes = {},
-        } = {}
+        }: Partial<ISphereGeometryInit> = {}
     ) {
         const wSegs = widthSegments;
         const hSegs = heightSegments;

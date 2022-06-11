@@ -1,10 +1,27 @@
 // https://github.com/mrdoob/three.js/blob/master/src/geometries/TorusGeometry.js
 
-import { Geometry } from '../core/Geometry.js';
-import { Vec3 } from '../math/Vec3.js';
+import { Geometry, IGeometryAttribute } from '../core/Geometry';
+import { GLContext } from '../core/Renderer';
+import { Vec3 } from '../math/Vec3';
+
+export interface ITorusGeometryInit {
+    radius: number;
+    tube: number;
+    radialSegments: number;
+    tubularSegments: number;
+    arc: number;
+    attributes: Record<string, Partial<IGeometryAttribute>>
+}
 
 export class Torus extends Geometry {
-    constructor(gl, { radius = 0.5, tube = 0.2, radialSegments = 8, tubularSegments = 6, arc = Math.PI * 2, attributes = {} } = {}) {
+    constructor(gl: GLContext, {
+        radius = 0.5,
+        tube = 0.2,
+        radialSegments = 8,
+        tubularSegments = 6,
+        arc = Math.PI * 2,
+        attributes = {}
+    }: Partial<ITorusGeometryInit> = {}) {
         const num = (radialSegments + 1) * (tubularSegments + 1);
         const numIndices = radialSegments * tubularSegments * 6;
 

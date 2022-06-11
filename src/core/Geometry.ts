@@ -68,7 +68,10 @@ export class Geometry implements IDisposable {
     public isInstanced: boolean;
     public bounds: IGeometryBounds;
 
-    constructor(gl, attributes = {}) {
+    // hacky way to did raycast of sphere
+    public raycast: string;
+
+    constructor(gl: GLContext, attributes = {}) {
         if (!gl.canvas) console.error('gl not passed as first argument to Geometry');
         this.gl = gl;
         this.attributes = attributes;

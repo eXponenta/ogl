@@ -1,4 +1,4 @@
-import * as Mat4Func from './functions/Mat4Func.js';
+import * as Mat4Func from './functions/Mat4Func';
 import type { Vec3 } from './Vec3';
 import type { Quat } from './Quat';
 import type { WritableArrayLike } from './functions/Mat3Func';

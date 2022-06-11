@@ -19,14 +19,14 @@ export { Vec3 } from './math/Vec3';
 export { Vec4 } from './math/Vec4';
 
 // Extras
-export { Plane } from './extras/Plane.js';
-export { Box } from './extras/Box.js';
-export { Sphere } from './extras/Sphere.js';
-export { Cylinder } from './extras/Cylinder.js';
-export { Triangle } from './extras/Triangle.js';
-export { Torus } from './extras/Torus.js';
+export { Plane } from './extras/Plane';
+export { Box } from './extras/Box';
+export { Sphere } from './extras/Sphere';
+export { Cylinder } from './extras/Cylinder';
+export { Triangle } from './extras/Triangle';
+export { Torus } from './extras/Torus';
 export { Orbit } from './extras/Orbit.js';
-export { Raycast } from './extras/Raycast.js';
+export { Raycast } from './extras/Raycast';
 export { Curve } from './extras/Curve.js';
 export { Post } from './extras/Post.js';
 export { Skin } from './extras/Skin.js';

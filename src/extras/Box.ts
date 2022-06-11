@@ -1,8 +1,22 @@
-import { Geometry } from '../core/Geometry.js';
-import { Plane } from './Plane.js';
+import { Geometry } from '../core/Geometry';
+import { GLContext } from '../core/Renderer';
+import { IPlaneGeomInit, Plane } from './Plane';
+
+export interface IBoxGeometryInit extends IPlaneGeomInit {
+    depth: number;
+    depthSegments: number;
+}
 
 export class Box extends Geometry {
-    constructor(gl, { width = 1, height = 1, depth = 1, widthSegments = 1, heightSegments = 1, depthSegments = 1, attributes = {} } = {}) {
+    constructor(gl: GLContext, {
+        width = 1,
+        height = 1,
+        depth = 1,
+        widthSegments = 1,
+        heightSegments = 1,
+        depthSegments = 1,
+        attributes = {}
+    }: Partial<IBoxGeometryInit> = {}) {
         const wSegs = widthSegments;
         const hSegs = heightSegments;
         const dSegs = depthSegments;

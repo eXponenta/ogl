@@ -1,9 +1,12 @@
 // TODO: barycentric code shouldn't be here, but where?
 // TODO: SphereCast?
 
-import { Vec2 } from '../math/Vec2.js';
-import { Vec3 } from '../math/Vec3.js';
-import { Mat4 } from '../math/Mat4.js';
+import { Vec2 } from '../math/Vec2';
+import { Vec3 } from '../math/Vec3';
+import { Mat4 } from '../math/Mat4';
+import { Camera } from '../core/Camera';
+import { Mesh } from '../core/Mesh';
+import { IGeometryBounds } from '../core/Geometry';
 
 const tempVec2a = new Vec2();
 const tempVec2b = new Vec2();
@@ -23,14 +26,33 @@ const tempVec3k = new Vec3();
 
 const tempMat4 = new Mat4();
 
+export interface IHitResult {
+    localPoint: Vec3;
+    point: Vec3;
+    distance?: number;
+    faceNormal?: Vec3;
+    localFaceNormal?: Vec3;
+    uv?: Vec2;
+    normal?: Vec3;
+    localNormal?: Vec3;
+}
+
+export interface IIntersectInit {
+    output?: HitMesh[];
+    maxDistance?: number;
+    cullFace?: boolean;
+    includeUV?: boolean;
+    includeNormal?: boolean;
+}
+
+type HitMesh = Mesh & { hit: IHitResult };
+
 export class Raycast {
-    constructor() {
-        this.origin = new Vec3();
-        this.direction = new Vec3();
-    }
+    public origin: Vec3 = new Vec3();
+    public direction: Vec3 = new Vec3();
 
     // Set ray from mouse unprojection
-    castMouse(camera, mouse = [0, 0]) {
+    castMouse(camera: Camera, mouse: Vec2 | Array<number> = [0, 0]) {
         if (camera.type === 'orthographic') {
             // Set origin
             // Since camera is orthographic, origin is not the camera position
@@ -56,7 +78,7 @@ export class Raycast {
         }
     }
 
-    intersectBounds(meshes, { maxDistance, output = [] } = {}) {
+    intersectBounds(meshes: Mesh[], { maxDistance, output = [] }: IIntersectInit = {}) {
         if (!Array.isArray(meshes)) meshes = [meshes];
 
         const invWorldMat4 = tempMat4;
@@ -66,7 +88,7 @@ export class Raycast {
         const hits = output;
         hits.length = 0;
 
-        meshes.forEach((mesh) => {
+        meshes.forEach((mesh: HitMesh) => {
             // Create bounds
             if (!mesh.geometry.bounds || mesh.geometry.bounds.radius === Infinity) mesh.geometry.computeBoundingSphere();
             const bounds = mesh.geometry.bounds;
@@ -126,7 +148,7 @@ export class Raycast {
         return hits;
     }
 
-    intersectMeshes(meshes, { cullFace = true, maxDistance, includeUV = true, includeNormal = true, output = [] } = {}) {
+    intersectMeshes(meshes, { cullFace = true, maxDistance, includeUV = true, includeNormal = true, output = [] }: IIntersectInit = {}) {
         // Test bounds first before testing geometry
         const hits = this.intersectBounds(meshes, { maxDistance, output });
         if (!hits.length) return hits;
@@ -253,7 +275,7 @@ export class Raycast {
         return hits;
     }
 
-    intersectSphere(sphere, origin = this.origin, direction = this.direction) {
+    intersectSphere(sphere: IGeometryBounds, origin = this.origin, direction = this.direction): number {
         const ray = tempVec3c;
         ray.sub(sphere.center, origin);
         const tca = ray.dot(direction);
@@ -269,7 +291,7 @@ export class Raycast {
     }
 
     // Ray AABB - Ray Axis aligned bounding box testing
-    intersectBox(box, origin = this.origin, direction = this.direction) {
+    intersectBox(box: IGeometryBounds, origin = this.origin, direction = this.direction): number {
         let tmin, tmax, tYmin, tYmax, tZmin, tZmax;
         const invdirx = 1 / direction.x;
         const invdiry = 1 / direction.y;
@@ -292,7 +314,7 @@ export class Raycast {
         return tmin >= 0 ? tmin : tmax;
     }
 
-    intersectTriangle(a, b, c, backfaceCulling = true, origin = this.origin, direction = this.direction, normal = tempVec3g) {
+    intersectTriangle(a: Vec3, b: Vec3, c: Vec3, backfaceCulling = true, origin = this.origin, direction = this.direction, normal = tempVec3g): number {
         // from https://github.com/mrdoob/three.js/blob/master/src/math/Ray.js
         // which is from http://www.geometrictools.com/GTEngine/Include/Mathematics/GteIntrRay3Triangle3.h
         const edge1 = tempVec3h;
@@ -322,7 +344,7 @@ export class Raycast {
         return QdN / DdN;
     }
 
-    getBarycoord(point, a, b, c, target = tempVec3h) {
+    getBarycoord(point: Vec3, a: Vec3, b: Vec3, c: Vec3, target = tempVec3h): Vec3 {
         // From https://github.com/mrdoob/three.js/blob/master/src/math/Triangle.js
         // static/instance method to calculate barycentric coordinates
         // based on: http://www.blackpawn.com/texts/pointinpoly/default.html

@@ -1,8 +1,8 @@
-import { Euler } from './Euler.js';
-import { WritableArrayLike } from './functions/Mat3Func.js';
-import * as QuatFunc from './functions/QuatFunc.js';
-import { Mat3 } from './Mat3.js';
-import { Vec3 } from './Vec3.js';
+import { Euler } from './Euler';
+import { WritableArrayLike } from './functions/Mat3Func';
+import * as QuatFunc from './functions/QuatFunc';
+import { Mat3 } from './Mat3';
+import { Vec3 } from './Vec3';
 
 export class Quat extends Array<number> {
     onChange: () => void;
