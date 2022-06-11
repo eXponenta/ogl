@@ -41,6 +41,10 @@ export class Vec2 extends Array<number> {
         return this;
     }
 
+    clone(): Vec2 {
+        return new Vec2(this[0], this[1]);
+    }
+
     add(va: Vec2, vb?: Vec2): this {
         if (vb) Vec2Func.add(this, va, vb);
         else Vec2Func.add(this, this, va);
@@ -130,10 +134,6 @@ export class Vec2 extends Array<number> {
     lerp(v: Vec2, a: number): this {
         Vec2Func.lerp(this, this, v, a);
         return this;
-    }
-
-    clone(): Vec2 {
-        return new Vec2(this[0], this[1]);
     }
 
     fromArray(a: WritableArrayLike, o: number = 0): this {

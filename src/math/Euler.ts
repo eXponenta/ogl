@@ -55,14 +55,23 @@ export class Euler extends Array<number> {
         return this;
     }
 
-    copy (copy: Euler): this
-    copy (copy: Array<number>): this
+    copy(copy: Euler): this
+    copy(copy: Array<number>): this
     copy(v) {
         this[0] = v[0];
         this[1] = v[1];
         this[2] = v[2];
         this.onChange();
         return this;
+    }
+
+    clone() {
+        const clone = new Euler();
+
+        clone.order = this.order;
+        clone.copy(this);
+
+        return clone;
     }
 
     reorder(order: EulerFunc.EulerOrder) {

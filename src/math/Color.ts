@@ -56,6 +56,10 @@ export class Color extends Array<number> {
         return this.copy(ColorFunc.parseColor(...color));
     }
 
+    clone(): Color {
+        return new Color().copy(this);
+    }
+
     copy(v: Array<number> | Color): this {
         this[0] = v[0];
         this[1] = v[1];

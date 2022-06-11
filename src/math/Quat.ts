@@ -102,6 +102,10 @@ export class Quat extends Array<number> {
         return this;
     }
 
+    clone() {
+        return new Quat().copy(this);
+    }
+
     normalize(q: Quat = this): this {
         QuatFunc.normalize(this, q);
         this.onChange();

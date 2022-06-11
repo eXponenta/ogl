@@ -49,6 +49,10 @@ export class Vec3 extends Array<number> {
         return this;
     }
 
+    clone(): Vec3 {
+        return new Vec3(this[0], this[1], this[2]);
+    }
+
     add(va: Vec3, vb?: Vec3): this {
         if (vb) Vec3Func.add(this, va, vb);
         else Vec3Func.add(this, this, va);
@@ -153,10 +157,6 @@ export class Vec3 extends Array<number> {
     lerp(v: Vec3, t: number): this {
         Vec3Func.lerp(this, this, v, t);
         return this;
-    }
-
-    clone(): Vec3 {
-        return new Vec3(this[0], this[1], this[2]);
     }
 
     fromArray(a: WritableArrayLike, o: number = 0): Vec3 {

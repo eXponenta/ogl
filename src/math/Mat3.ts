@@ -53,6 +53,10 @@ export class Mat3 extends Array<number> {
         return this;
     }
 
+    clone() {
+        return new Mat3().copy(this);
+    }
+
     fromMatrix4(m: Mat4): this {
         Mat3Func.fromMat4(this, m);
         return this;

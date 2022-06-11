@@ -103,6 +103,10 @@ export class Mat4 extends Array<number> {
         return this;
     }
 
+    clone() {
+        return new Mat4().copy(this);
+    }
+
     fromPerspective({ fov, aspect, near, far }:{fov: number, aspect: number, near: number, far: number}): this {
         Mat4Func.perspective(this, fov, aspect, near, far);
         return this;
