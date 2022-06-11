@@ -1,4 +1,8 @@
+import { WritableArrayLike } from "./Mat3Func";
+
 const EPSILON = 0.000001;
+
+type vec4 = WritableArrayLike;
 
 /**
  * Copy the values from one vec4 to another
@@ -7,7 +11,7 @@ const EPSILON = 0.000001;
  * @param {vec4} a the source vector
  * @returns {vec4} out
  */
-export function copy(out, a) {
+export function copy(out: vec4, a: vec4): vec4 {
     out[0] = a[0];
     out[1] = a[1];
     out[2] = a[2];
@@ -25,7 +29,7 @@ export function copy(out, a) {
  * @param {Number} w W component
  * @returns {vec4} out
  */
-export function set(out, x, y, z, w) {
+export function set(out: vec4, x: number, y: number, z: number, w: number): vec4 {
     out[0] = x;
     out[1] = y;
     out[2] = z;
@@ -41,7 +45,7 @@ export function set(out, x, y, z, w) {
  * @param {vec4} b the second operand
  * @returns {vec4} out
  */
-export function add(out, a, b) {
+export function add(out: vec4, a: vec4, b: vec4): vec4 {
     out[0] = a[0] + b[0];
     out[1] = a[1] + b[1];
     out[2] = a[2] + b[2];
@@ -57,7 +61,7 @@ export function add(out, a, b) {
  * @param {Number} b amount to scale the vector by
  * @returns {vec4} out
  */
-export function scale(out, a, b) {
+export function scale(out: vec4, a: vec4, b: number): vec4 {
     out[0] = a[0] * b;
     out[1] = a[1] * b;
     out[2] = a[2] * b;
@@ -71,7 +75,7 @@ export function scale(out, a, b) {
  * @param {vec4} a vector to calculate length of
  * @returns {Number} length of a
  */
-export function length(a) {
+export function length(a: vec4): number {
     let x = a[0];
     let y = a[1];
     let z = a[2];
@@ -86,7 +90,7 @@ export function length(a) {
  * @param {vec4} a vector to normalize
  * @returns {vec4} out
  */
-export function normalize(out, a) {
+export function normalize(out: vec4, a: vec4): vec4 {
     let x = a[0];
     let y = a[1];
     let z = a[2];
@@ -109,7 +113,7 @@ export function normalize(out, a) {
  * @param {vec4} b the second operand
  * @returns {Number} dot product of a and b
  */
-export function dot(a, b) {
+export function dot(a: vec4, b: vec4): number {
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
 }
 
@@ -122,7 +126,7 @@ export function dot(a, b) {
  * @param {Number} t interpolation amount between the two inputs
  * @returns {vec4} out
  */
-export function lerp(out, a, b, t) {
+export function lerp(out: vec4, a: vec4, b: vec4, t: number): vec4 {
     let ax = a[0];
     let ay = a[1];
     let az = a[2];

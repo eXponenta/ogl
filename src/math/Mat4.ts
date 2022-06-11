@@ -1,6 +1,9 @@
 import * as Mat4Func from './functions/Mat4Func.js';
+import type { Vec3 } from './Vec3';
+import type { Quat } from './Quat';
+import type { WritableArrayLike } from './functions/Mat3Func';
 
-export class Mat4 extends Array {
+export class Mat4 extends Array<number> {
     constructor(
         m00 = 1,
         m01 = 0,
@@ -23,60 +26,64 @@ export class Mat4 extends Array {
         return this;
     }
 
-    get x() {
+    get x(): number {
         return this[12];
     }
 
-    get y() {
+    get y(): number {
         return this[13];
     }
 
-    get z() {
+    get z(): number {
         return this[14];
     }
 
-    get w() {
+    get w(): number {
         return this[15];
     }
 
-    set x(v) {
+    set x(v: number) {
         this[12] = v;
     }
 
-    set y(v) {
+    set y(v: number) {
         this[13] = v;
     }
 
-    set z(v) {
+    set z(v: number) {
         this[14] = v;
     }
 
-    set w(v) {
+    set w(v: number) {
         this[15] = v;
     }
 
-    set(m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33) {
-        if (m00.length) return this.copy(m00);
-        Mat4Func.set(this, m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33);
+    set(mat: Mat4): this
+    set(array: Array<number>): this
+    set(m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33): this
+    set(...args: any[]) {
+        if (args[0].length) return this.copy(args[0]);
+        Mat4Func.copy(this, args);
         return this;
     }
 
-    translate(v, m = this) {
+    translate(v: Vec3, m = this): this {
         Mat4Func.translate(this, m, v);
         return this;
     }
 
-    rotate(v, axis, m = this) {
+    rotate(v: number, axis: Vec3, m = this): this {
         Mat4Func.rotate(this, m, v, axis);
         return this;
     }
 
-    scale(v, m = this) {
+    scale(v: number, m?: Mat4): this
+    scale(v: Vec3 | number, m = this): this {
         Mat4Func.scale(this, m, typeof v === 'number' ? [v, v, v] : v);
         return this;
     }
 
-    multiply(ma, mb) {
+    multiply(ma: Mat4, mb: Mat4): this {
         if (mb) {
             Mat4Func.multiply(this, ma, mb);
         } else {
@@ -85,77 +92,78 @@ export class Mat4 extends Array {
         return this;
     }
 
-    identity() {
+    identity(): this {
         Mat4Func.identity(this);
         return this;
     }
 
-    copy(m) {
+    copy(m: Array<number>): this
+    copy(m: Mat4) {
         Mat4Func.copy(this, m);
         return this;
     }
 
-    fromPerspective({ fov, aspect, near, far } = {}) {
+    fromPerspective({ fov, aspect, near, far }:{fov: number, aspect: number, near: number, far: number}): this {
         Mat4Func.perspective(this, fov, aspect, near, far);
         return this;
     }
 
-    fromOrthogonal({ left, right, bottom, top, near, far }) {
+    fromOrthogonal({ left, right, bottom, top, near, far }:{left: number, right: number, bottom: number, top: number, near: number, far: number}): this {
         Mat4Func.ortho(this, left, right, bottom, top, near, far);
         return this;
     }
 
-    fromQuaternion(q) {
+    fromQuaternion(q: Quat): this {
         Mat4Func.fromQuat(this, q);
         return this;
     }
 
-    setPosition(v) {
+    setPosition(v: Vec3): this {
         this.x = v[0];
         this.y = v[1];
         this.z = v[2];
         return this;
     }
 
-    inverse(m = this) {
+    inverse(m: Mat4 = this): this {
         Mat4Func.invert(this, m);
         return this;
     }
 
-    compose(q, pos, scale) {
+    compose(q: Quat, pos: Vec3, scale: Vec3): this {
         Mat4Func.fromRotationTranslationScale(this, q, pos, scale);
         return this;
     }
 
-    getRotation(q) {
+    getRotation(q: Quat): this {
         Mat4Func.getRotation(q, this);
         return this;
     }
 
-    getTranslation(pos) {
+    getTranslation(pos: Vec3): this {
         Mat4Func.getTranslation(pos, this);
         return this;
     }
 
-    getScaling(scale) {
+    getScaling(scale: Vec3): this {
         Mat4Func.getScaling(scale, this);
         return this;
     }
 
-    getMaxScaleOnAxis() {
+    getMaxScaleOnAxis(): number {
         return Mat4Func.getMaxScaleOnAxis(this);
     }
 
-    lookAt(eye, target, up) {
+    lookAt(eye: Vec3, target: Vec3, up: Vec3): this {
         Mat4Func.targetTo(this, eye, target, up);
         return this;
     }
 
-    determinant() {
+    determinant(): number {
         return Mat4Func.determinant(this);
     }
 
-    fromArray(a, o = 0) {
+    fromArray(a: WritableArrayLike, o: number = 0) {
         this[0] = a[o];
         this[1] = a[o + 1];
         this[2] = a[o + 2];
@@ -175,7 +183,7 @@ export class Mat4 extends Array {
         return this;
     }
 
-    toArray(a = [], o = 0) {
+    toArray(a: WritableArrayLike = [], o: number = 0) {
         a[o] = this[0];
         a[o + 1] = this[1];
         a[o + 2] = this[2];

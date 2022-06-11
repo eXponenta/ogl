@@ -83,7 +83,7 @@ export class Transform {
         this.rotation.fromQuaternion(this.quaternion);
     }
 
-    lookAt(target: Transform, invert = false) {
+    lookAt(target: Vec3, invert = false) {
         if (invert) this.matrix.lookAt(this.position, target, this.up);
         else this.matrix.lookAt(target, this.position, this.up);
         this.matrix.getRotation(this.quaternion);

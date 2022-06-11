@@ -1,6 +1,7 @@
-import * as Vec4Func from './functions/Vec4Func.js';
+import type { WritableArrayLike } from './functions/Mat3Func';
+import * as Vec4Func from './functions/Vec4Func';
 
-export class Vec4 extends Array {
+export class Vec4 extends Array<number> {
     constructor(x = 0, y = x, z = x, w = x) {
         super(x, y, z, w);
         return this;
@@ -38,32 +39,36 @@ export class Vec4 extends Array {
         this[3] = v;
     }
 
-    set(x, y, z, w) {
+    set(x: Array<number>): this;
+    set(x: Vec4): this;
+    set(x: number, y?: number, z?: number, w?: number): this;
+    set(x, y?, z?, w?) {
         if (x.length) return this.copy(x);
         Vec4Func.set(this, x, y, z, w);
         return this;
     }
 
-    copy(v) {
+    copy(v: Array<number>): this;
+    copy(v: Vec4) {
         Vec4Func.copy(this, v);
         return this;
     }
 
-    normalize() {
+    normalize(): this {
         Vec4Func.normalize(this, this);
         return this;
     }
 
-    multiply(v) {
+    multiply(v: number): this {
         Vec4Func.scale(this, this, v);
         return this;
     }
 
-    dot(v) {
+    dot(v: Vec4): number {
         return Vec4Func.dot(this, v);
     }
 
-    fromArray(a, o = 0) {
+    fromArray(a: WritableArrayLike, o: number = 0): this {
         this[0] = a[o];
         this[1] = a[o + 1];
         this[2] = a[o + 2];
@@ -71,7 +76,7 @@ export class Vec4 extends Array {
         return this;
     }
 
-    toArray(a = [], o = 0) {
+    toArray(a: WritableArrayLike = [], o: number = 0): WritableArrayLike {
         a[o] = this[0];
         a[o + 1] = this[1];
         a[o + 2] = this[2];

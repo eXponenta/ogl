@@ -30,9 +30,9 @@ export class Camera extends Transform implements ICamera {
     public readonly projectionMatrix: Mat4 = new Mat4();
     public readonly viewMatrix: Mat4 = new Mat4();
     public readonly projectionViewMatrix: Mat4 = new Mat4();
-    public readonly worldPosition: Mat4 = new Vec3();
+    public readonly worldPosition: Vec3 = new Vec3();
 
-    public frustum: Array<Vec3>;
+    public frustum: Array<Vec3 & { constant?: number} >;
 
     public type: 'orthographic' | 'perspective';
 
@@ -47,24 +47,20 @@ export class Camera extends Transform implements ICamera {
     public bottom?: number;
     public zoom?: number;
 
-    constructor(gl, { 
-        near = 0.1, 
-        far = 100, 
-        fov = 45, 
-        aspect = 1, 
-        left, 
-        right, 
-        bottom, 
-        top, 
-        zoom = 1 
+    constructor(gl, {
+        near = 0.1,
+        far = 100,
+        fov = 45,
+        aspect = 1,
+        left,
+        right,
+        bottom,
+        top,
+        zoom = 1
     }: Partial<IOrhoCameraInit & IPerspectiveCameraInit> = {}) {
         super();
 
         Object.assign(this, { near, far, fov, aspect, left, right, bottom, top, zoom });
-
-        this.viewMatrix = new Mat4();
-        this.projectionViewMatrix = new Mat4();
-        this.worldPosition = new Vec3();
 
         // Use orthographic if left/right set, else default to perspective camera
         this.type = left || right ? 'orthographic' : 'perspective';
@@ -109,7 +105,7 @@ export class Camera extends Transform implements ICamera {
         return this;
     }
 
-    lookAt(target: Transform) {
+    lookAt(target: Vec3) {
         super.lookAt(target, true);
         return this;
     }
@@ -165,7 +161,7 @@ export class Camera extends Transform implements ICamera {
         return this.frustumIntersectsSphere(center, radius);
     }
 
-    frustumIntersectsSphere(center: number, radius: number): boolean {
+    frustumIntersectsSphere(center: Vec3, radius: number): boolean {
         const normal = tempVec3b;
 
         for (let i = 0; i < 6; i++) {

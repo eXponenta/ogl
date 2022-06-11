@@ -1,6 +1,10 @@
-import * as Vec3Func from './functions/Vec3Func.js';
+import { WritableArrayLike } from './functions/Mat3Func';
+import * as Vec3Func from './functions/Vec3Func';
+import type { Mat3 } from './Mat3';
+import type { Mat4 } from './Mat4';
+import type { Quat } from './Quat';
 
-export class Vec3 extends Array {
+export class Vec3 extends Array<number> {
     constructor(x = 0, y = x, z = x) {
         super(x, y, z);
         return this;
@@ -18,154 +22,158 @@ export class Vec3 extends Array {
         return this[2];
     }
 
-    set x(v) {
+    set x(v: number) {
         this[0] = v;
     }
 
-    set y(v) {
+    set y(v: number) {
         this[1] = v;
     }
 
-    set z(v) {
+    set z(v: number) {
         this[2] = v;
     }
 
+    set(x: Array<number>): this;
+    set(x: Vec3): this;
+    set(x: number, y?: number, z?: number): this;
     set(x, y = x, z = x) {
         if (x.length) return this.copy(x);
         Vec3Func.set(this, x, y, z);
         return this;
     }
 
-    copy(v) {
+    copy(v: Array<number>): this;
+    copy(v: Vec3): this {
         Vec3Func.copy(this, v);
         return this;
     }
 
-    add(va, vb) {
+    add(va: Vec3, vb?: Vec3): this {
         if (vb) Vec3Func.add(this, va, vb);
         else Vec3Func.add(this, this, va);
         return this;
     }
 
-    sub(va, vb) {
+    sub(va: Vec3, vb?: Vec3): this {
         if (vb) Vec3Func.subtract(this, va, vb);
         else Vec3Func.subtract(this, this, va);
         return this;
     }
 
-    multiply(v) {
-        if (v.length) Vec3Func.multiply(this, this, v);
+    multiply(v: Vec3 | number): this {
+        if (typeof v !== 'number') Vec3Func.multiply(this, this, v);
         else Vec3Func.scale(this, this, v);
         return this;
     }
 
-    divide(v) {
-        if (v.length) Vec3Func.divide(this, this, v);
+    divide(v: Vec3 | number): this {
+        if (typeof v !== 'number') Vec3Func.divide(this, this, v);
         else Vec3Func.scale(this, this, 1 / v);
         return this;
     }
 
-    inverse(v = this) {
+    inverse(v: Vec3 = this): this {
         Vec3Func.inverse(this, v);
         return this;
     }
 
     // Can't use 'length' as Array.prototype uses it
-    len() {
+    len(): number {
         return Vec3Func.length(this);
     }
 
-    distance(v) {
+    distance(v?: Vec3): number {
         if (v) return Vec3Func.distance(this, v);
         else return Vec3Func.length(this);
     }
 
-    squaredLen() {
+    squaredLen(): number {
         return Vec3Func.squaredLength(this);
     }
 
-    squaredDistance(v) {
+    squaredDistance(v?: Vec3): number {
         if (v) return Vec3Func.squaredDistance(this, v);
         else return Vec3Func.squaredLength(this);
     }
 
-    negate(v = this) {
+    negate(v: Vec3 = this): this {
         Vec3Func.negate(this, v);
         return this;
     }
 
-    cross(va, vb) {
+    cross(va: Vec3, vb?: Vec3): this {
         if (vb) Vec3Func.cross(this, va, vb);
         else Vec3Func.cross(this, this, va);
         return this;
     }
 
-    scale(v) {
+    scale(v: Vec3): this {
         Vec3Func.scale(this, this, v);
         return this;
     }
 
-    normalize() {
+    normalize(): this {
         Vec3Func.normalize(this, this);
         return this;
     }
 
-    dot(v) {
+    dot(v: Vec3): number {
         return Vec3Func.dot(this, v);
     }
 
-    equals(v) {
+    equals(v: Vec3): boolean {
         return Vec3Func.exactEquals(this, v);
     }
 
-    applyMatrix3(mat3) {
+    applyMatrix3(mat3: Mat3): this {
         Vec3Func.transformMat3(this, this, mat3);
         return this;
     }
 
-    applyMatrix4(mat4) {
+    applyMatrix4(mat4: Mat4): this {
         Vec3Func.transformMat4(this, this, mat4);
         return this;
     }
 
-    scaleRotateMatrix4(mat4) {
+    scaleRotateMatrix4(mat4: Mat4): this {
         Vec3Func.scaleRotateMat4(this, this, mat4);
         return this;
     }
 
-    applyQuaternion(q) {
+    applyQuaternion(q: Quat): this {
         Vec3Func.transformQuat(this, this, q);
         return this;
     }
 
-    angle(v) {
+    angle(v: Vec3): number {
         return Vec3Func.angle(this, v);
     }
 
-    lerp(v, t) {
+    lerp(v: Vec3, t: number): this {
         Vec3Func.lerp(this, this, v, t);
         return this;
     }
 
-    clone() {
+    clone(): Vec3 {
         return new Vec3(this[0], this[1], this[2]);
     }
 
-    fromArray(a, o = 0) {
+    fromArray(a: WritableArrayLike, o: number = 0): Vec3 {
         this[0] = a[o];
         this[1] = a[o + 1];
         this[2] = a[o + 2];
         return this;
     }
 
-    toArray(a = [], o = 0) {
+    toArray(a: WritableArrayLike = [], o: number = 0): WritableArrayLike {
         a[o] = this[0];
         a[o + 1] = this[1];
         a[o + 2] = this[2];
         return a;
     }
 
-    transformDirection(mat4) {
+    transformDirection(mat4: Mat4): this {
         const x = this[0];
         const y = this[1];
         const z = this[2];

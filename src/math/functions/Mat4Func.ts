@@ -1,13 +1,14 @@
+import type { WritableArrayLike } from './Mat3Func';
 const EPSILON = 0.000001;
 
 /**
- * Copy the values from one mat4 to another
+ * Copy the values from one WritableArrayLike to another
  *
- * @param {mat4} out the receiving matrix
- * @param {mat4} a the source matrix
- * @returns {mat4} out
+ * @param {WritableArrayLike} out the receiving matrix
+ * @param {WritableArrayLike} a the source matrix
+ * @returns {WritableArrayLike} out
  */
-export function copy(out, a) {
+export function copy(out: WritableArrayLike, a: WritableArrayLike): WritableArrayLike {
     out[0] = a[0];
     out[1] = a[1];
     out[2] = a[2];
@@ -28,12 +29,12 @@ export function copy(out, a) {
 }
 
 /**
- * Set the components of a mat4 to the given values
+ * Set the components of a WritableArrayLike to the given values
  *
- * @param {mat4} out the receiving matrix
- * @returns {mat4} out
+ * @param {WritableArrayLike} out the receiving matrix
+ * @returns {WritableArrayLike} out
  */
-export function set(out, m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33) {
+export function set(out: WritableArrayLike, m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33): WritableArrayLike {
     out[0] = m00;
     out[1] = m01;
     out[2] = m02;
@@ -54,12 +55,12 @@ export function set(out, m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, 
 }
 
 /**
- * Set a mat4 to the identity matrix
+ * Set a WritableArrayLike to the identity matrix
  *
- * @param {mat4} out the receiving matrix
- * @returns {mat4} out
+ * @param {WritableArrayLike} out the receiving matrix
+ * @returns {WritableArrayLike} out
  */
-export function identity(out) {
+export function identity(out: WritableArrayLike): WritableArrayLike {
     out[0] = 1;
     out[1] = 0;
     out[2] = 0;
@@ -80,13 +81,13 @@ export function identity(out) {
 }
 
 /**
- * Transpose the values of a mat4
+ * Transpose the values of a WritableArrayLike
  *
- * @param {mat4} out the receiving matrix
- * @param {mat4} a the source matrix
- * @returns {mat4} out
+ * @param {WritableArrayLike} out the receiving matrix
+ * @param {WritableArrayLike} a the source matrix
+ * @returns {WritableArrayLike} out
  */
-export function transpose(out, a) {
+export function transpose(out: WritableArrayLike, a: WritableArrayLike): WritableArrayLike {
     // If we are transposing ourselves we can skip a few steps but have to cache some values
     if (out === a) {
         let a01 = a[1],
@@ -131,13 +132,13 @@ export function transpose(out, a) {
 }
 
 /**
- * Inverts a mat4
+ * Inverts a WritableArrayLike
  *
- * @param {mat4} out the receiving matrix
- * @param {mat4} a the source matrix
- * @returns {mat4} out
+ * @param {WritableArrayLike} out the receiving matrix
+ * @param {WritableArrayLike} a the source matrix
+ * @returns {WritableArrayLike} out
  */
-export function invert(out, a) {
+export function invert(out: WritableArrayLike, a: WritableArrayLike): WritableArrayLike {
     let a00 = a[0],
         a01 = a[1],
         a02 = a[2],
@@ -197,12 +198,12 @@ export function invert(out, a) {
 }
 
 /**
- * Calculates the determinant of a mat4
+ * Calculates the determinant of a WritableArrayLike
  *
- * @param {mat4} a the source matrix
+ * @param {WritableArrayLike} a the source matrix
  * @returns {Number} determinant of a
  */
-export function determinant(a) {
+export function determinant(a: WritableArrayLike): number {
     let a00 = a[0],
         a01 = a[1],
         a02 = a[2],
@@ -238,14 +239,14 @@ export function determinant(a) {
 }
 
 /**
- * Multiplies two mat4s
+ * Multiplies two WritableArrayLikes
  *
- * @param {mat4} out the receiving matrix
- * @param {mat4} a the first operand
- * @param {mat4} b the second operand
- * @returns {mat4} out
+ * @param {WritableArrayLike} out the receiving matrix
+ * @param {WritableArrayLike} a the first operand
+ * @param {WritableArrayLike} b the second operand
+ * @returns {WritableArrayLike} out
  */
-export function multiply(out, a, b) {
+export function multiply(out: WritableArrayLike, a: WritableArrayLike, b: WritableArrayLike): WritableArrayLike {
     let a00 = a[0],
         a01 = a[1],
         a02 = a[2],
@@ -303,14 +304,14 @@ export function multiply(out, a, b) {
 }
 
 /**
- * Translate a mat4 by the given vector
+ * Translate a WritableArrayLike by the given vector
  *
- * @param {mat4} out the receiving matrix
- * @param {mat4} a the matrix to translate
+ * @param {WritableArrayLike} out the receiving matrix
+ * @param {WritableArrayLike} a the matrix to translate
  * @param {vec3} v vector to translate by
- * @returns {mat4} out
+ * @returns {WritableArrayLike} out
  */
-export function translate(out, a, v) {
+export function translate(out: WritableArrayLike, a: WritableArrayLike, v: WritableArrayLike): WritableArrayLike {
     let x = v[0],
         y = v[1],
         z = v[2];
@@ -360,14 +361,14 @@ export function translate(out, a, v) {
 }
 
 /**
- * Scales the mat4 by the dimensions in the given vec3 not using vectorization
+ * Scales the WritableArrayLike by the dimensions in the given vec3 not using vectorization
  *
- * @param {mat4} out the receiving matrix
- * @param {mat4} a the matrix to scale
+ * @param {WritableArrayLike} out the receiving matrix
+ * @param {WritableArrayLike} a the matrix to scale
  * @param {vec3} v the vec3 to scale the matrix by
- * @returns {mat4} out
+ * @returns {WritableArrayLike} out
  **/
-export function scale(out, a, v) {
+export function scale(out: WritableArrayLike, a: WritableArrayLike, v: WritableArrayLike): WritableArrayLike {
     let x = v[0],
         y = v[1],
         z = v[2];
@@ -392,15 +393,15 @@ export function scale(out, a, v) {
 }
 
 /**
- * Rotates a mat4 by the given angle around the given axis
+ * Rotates a WritableArrayLike by the given angle around the given axis
  *
- * @param {mat4} out the receiving matrix
- * @param {mat4} a the matrix to rotate
+ * @param {WritableArrayLike} out the receiving matrix
+ * @param {WritableArrayLike} a the matrix to rotate
  * @param {Number} rad the angle to rotate the matrix by
  * @param {vec3} axis the axis to rotate around
- * @returns {mat4} out
+ * @returns {WritableArrayLike} out
  */
-export function rotate(out, a, rad, axis) {
+export function rotate(out: WritableArrayLike, a: WritableArrayLike, rad: number, axis: WritableArrayLike): WritableArrayLike {
     let x = axis[0],
         y = axis[1],
         z = axis[2];
@@ -480,10 +481,10 @@ export function rotate(out, a, rad, axis) {
  *  the returned vector will be the same as the translation vector
  *  originally supplied.
  * @param  {vec3} out Vector to receive translation component
- * @param  {mat4} mat Matrix to be decomposed (input)
+ * @param  {WritableArrayLike} mat Matrix to be decomposed (input)
  * @return {vec3} out
  */
-export function getTranslation(out, mat) {
+export function getTranslation(out: WritableArrayLike, mat: WritableArrayLike): WritableArrayLike {
     out[0] = mat[12];
     out[1] = mat[13];
     out[2] = mat[14];
@@ -498,10 +499,10 @@ export function getTranslation(out, mat) {
  *  the same as the scaling vector
  *  originally supplied.
  * @param  {vec3} out Vector to receive scaling factor component
- * @param  {mat4} mat Matrix to be decomposed (input)
+ * @param  {WritableArrayLike} mat Matrix to be decomposed (input)
  * @return {vec3} out
  */
-export function getScaling(out, mat) {
+export function getScaling(out: WritableArrayLike, mat: WritableArrayLike): WritableArrayLike {
     let m11 = mat[0];
     let m12 = mat[1];
     let m13 = mat[2];
@@ -543,7 +544,7 @@ export function getMaxScaleOnAxis(mat) {
  *  fromRotationTranslation, the returned quaternion will be the
  *  same as the quaternion originally supplied.
  * @param {quat} out Quaternion to receive the rotation component
- * @param {mat4} mat Matrix to be decomposed (input)
+ * @param {WritableArrayLike} mat Matrix to be decomposed (input)
  * @return {quat} out
  */
 export const getRotation = (function () {
@@ -604,20 +605,20 @@ export const getRotation = (function () {
  * Creates a matrix from a quaternion rotation, vector translation and vector scale
  * This is equivalent to (but much faster than):
  *
- *     mat4.identity(dest);
- *     mat4.translate(dest, vec);
- *     let quatMat = mat4.create();
- *     quat4.toMat4(quat, quatMat);
- *     mat4.multiply(dest, quatMat);
- *     mat4.scale(dest, scale)
+ *     WritableArrayLike.identity(dest);
+ *     WritableArrayLike.translate(dest, vec);
+ *     let quatMat = WritableArrayLike.create();
+ *     quat4.toWritableArrayLike(quat, quatMat);
+ *     WritableArrayLike.multiply(dest, quatMat);
+ *     WritableArrayLike.scale(dest, scale)
  *
- * @param {mat4} out mat4 receiving operation result
+ * @param {WritableArrayLike} out WritableArrayLike receiving operation result
  * @param {quat4} q Rotation quaternion
  * @param {vec3} v Translation vector
  * @param {vec3} s Scaling vector
- * @returns {mat4} out
+ * @returns {WritableArrayLike} out
  */
-export function fromRotationTranslationScale(out, q, v, s) {
+export function fromRotationTranslationScale(out: WritableArrayLike, q: WritableArrayLike, v: WritableArrayLike, s: WritableArrayLike): WritableArrayLike {
     // Quaternion math
     let x = q[0],
         y = q[1],
@@ -663,12 +664,12 @@ export function fromRotationTranslationScale(out, q, v, s) {
 /**
  * Calculates a 4x4 matrix from the given quaternion
  *
- * @param {mat4} out mat4 receiving operation result
+ * @param {WritableArrayLike} out WritableArrayLike receiving operation result
  * @param {quat} q Quaternion to create matrix from
  *
- * @returns {mat4} out
+ * @returns {WritableArrayLike} out
  */
-export function fromQuat(out, q) {
+export function fromQuat(out: WritableArrayLike, q: WritableArrayLike): WritableArrayLike {
     let x = q[0],
         y = q[1],
         z = q[2],
@@ -713,14 +714,14 @@ export function fromQuat(out, q) {
 /**
  * Generates a perspective projection matrix with the given bounds
  *
- * @param {mat4} out mat4 frustum matrix will be written into
+ * @param {WritableArrayLike} out WritableArrayLike frustum matrix will be written into
  * @param {number} fovy Vertical field of view in radians
  * @param {number} aspect Aspect ratio. typically viewport width/height
  * @param {number} near Near bound of the frustum
  * @param {number} far Far bound of the frustum
- * @returns {mat4} out
+ * @returns {WritableArrayLike} out
  */
-export function perspective(out, fovy, aspect, near, far) {
+export function perspective(out: WritableArrayLike, fovy: number, aspect: number, near: number, far: number): WritableArrayLike {
     let f = 1.0 / Math.tan(fovy / 2);
     let nf = 1 / (near - far);
     out[0] = f / aspect;
@@ -745,16 +746,16 @@ export function perspective(out, fovy, aspect, near, far) {
 /**
  * Generates a orthogonal projection matrix with the given bounds
  *
- * @param {mat4} out mat4 frustum matrix will be written into
+ * @param {WritableArrayLike} out WritableArrayLike frustum matrix will be written into
  * @param {number} left Left bound of the frustum
  * @param {number} right Right bound of the frustum
  * @param {number} bottom Bottom bound of the frustum
  * @param {number} top Top bound of the frustum
  * @param {number} near Near bound of the frustum
  * @param {number} far Far bound of the frustum
- * @returns {mat4} out
+ * @returns {WritableArrayLike} out
  */
-export function ortho(out, left, right, bottom, top, near, far) {
+export function ortho(out: WritableArrayLike, left: number, right: number, bottom: number, top: number, near: number, far: number): WritableArrayLike {
     let lr = 1 / (left - right);
     let bt = 1 / (bottom - top);
     let nf = 1 / (near - far);
@@ -780,13 +781,13 @@ export function ortho(out, left, right, bottom, top, near, far) {
 /**
  * Generates a matrix that makes something look at something else.
  *
- * @param {mat4} out mat4 frustum matrix will be written into
+ * @param {WritableArrayLike} out WritableArrayLike frustum matrix will be written into
  * @param {vec3} eye Position of the viewer
  * @param {vec3} target Point the viewer is looking at
  * @param {vec3} up vec3 pointing up
- * @returns {mat4} out
+ * @returns {WritableArrayLike} out
  */
-export function targetTo(out, eye, target, up) {
+export function targetTo(out: WritableArrayLike, eye: WritableArrayLike, target: WritableArrayLike, up: WritableArrayLike): WritableArrayLike {
     let eyex = eye[0],
         eyey = eye[1],
         eyez = eye[2],
@@ -853,14 +854,14 @@ export function targetTo(out, eye, target, up) {
 }
 
 /**
- * Adds two mat4's
+ * Adds two WritableArrayLike's
  *
- * @param {mat4} out the receiving matrix
- * @param {mat4} a the first operand
- * @param {mat4} b the second operand
- * @returns {mat4} out
+ * @param {WritableArrayLike} out the receiving matrix
+ * @param {WritableArrayLike} a the first operand
+ * @param {WritableArrayLike} b the second operand
+ * @returns {WritableArrayLike} out
  */
-export function add(out, a, b) {
+export function add(out: WritableArrayLike, a: WritableArrayLike, b: WritableArrayLike): WritableArrayLike {
     out[0] = a[0] + b[0];
     out[1] = a[1] + b[1];
     out[2] = a[2] + b[2];
@@ -883,12 +884,12 @@ export function add(out, a, b) {
 /**
  * Subtracts matrix b from matrix a
  *
- * @param {mat4} out the receiving matrix
- * @param {mat4} a the first operand
- * @param {mat4} b the second operand
- * @returns {mat4} out
+ * @param {WritableArrayLike} out the receiving matrix
+ * @param {WritableArrayLike} a the first operand
+ * @param {WritableArrayLike} b the second operand
+ * @returns {WritableArrayLike} out
  */
-export function subtract(out, a, b) {
+export function subtract(out: WritableArrayLike, a: WritableArrayLike, b: WritableArrayLike): WritableArrayLike {
     out[0] = a[0] - b[0];
     out[1] = a[1] - b[1];
     out[2] = a[2] - b[2];
@@ -911,12 +912,12 @@ export function subtract(out, a, b) {
 /**
  * Multiply each element of the matrix by a scalar.
  *
- * @param {mat4} out the receiving matrix
- * @param {mat4} a the matrix to scale
+ * @param {WritableArrayLike} out the receiving matrix
+ * @param {WritableArrayLike} a the matrix to scale
  * @param {Number} b amount to scale the matrix's elements by
- * @returns {mat4} out
+ * @returns {WritableArrayLike} out
  */
-export function multiplyScalar(out, a, b) {
+export function multiplyScalar(out: WritableArrayLike, a: WritableArrayLike, b: number): WritableArrayLike {
     out[0] = a[0] * b;
     out[1] = a[1] * b;
     out[2] = a[2] * b;

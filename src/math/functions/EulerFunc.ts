@@ -1,5 +1,7 @@
+export type EulerOrder = 'XYZ' | 'YXZ' | 'ZXY' | 'ZYX' | 'YZX' | 'YZX' | 'XZY';
+
 // assumes the upper 3x3 of m is a pure rotation matrix (i.e, unscaled)
-export function fromRotationMatrix(out, m, order = 'YXZ') {
+export function fromRotationMatrix(out: Array<number>, m: Array<number>, order: EulerOrder = 'YXZ') {
     if (order === 'XYZ') {
         out[1] = Math.asin(Math.min(Math.max(m[8], -1), 1));
         if (Math.abs(m[8]) < 0.99999) {

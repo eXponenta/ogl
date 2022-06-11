@@ -10,42 +10,53 @@ import * as ColorFunc from './functions/ColorFunc.js';
 // new Color(0x4f27e8) - Number
 // new Color('red') - Color name string (short list in ColorFunc.js)
 
-export class Color extends Array {
-    constructor(color) {
-        if (Array.isArray(color)) return super(...color);
-        return super(...ColorFunc.parseColor(...arguments));
+export class Color extends Array<number> {
+    constructor ();
+    constructor (color: Array<number>)
+    constructor (color: string)
+    constructor (r: number, g: number, b: number)
+    constructor(...color: any[]) {
+        super(...(Array.isArray(color[0])
+            ? color
+            : ColorFunc.parseColor(...color))
+        );
+
+        return this;
     }
 
-    get r() {
+    get r(): number {
         return this[0];
     }
 
-    get g() {
+    get g(): number {
         return this[1];
     }
 
-    get b() {
+    get b(): number {
         return this[2];
     }
 
-    set r(v) {
+    set r(v: number) {
         this[0] = v;
     }
 
-    set g(v) {
+    set g(v: number) {
         this[1] = v;
     }
 
-    set b(v) {
+    set b(v: number) {
         this[2] = v;
     }
 
-    set(color) {
-        if (Array.isArray(color)) return this.copy(color);
-        return this.copy(ColorFunc.parseColor(...arguments));
+    set (color: Array<number>): this
+    set (color: string): this
+    set (r: number, g: number, b: number): this
+    set (...color: any[]) {
+        if (Array.isArray(color[0])) return this.copy(color[0]);
+        return this.copy(ColorFunc.parseColor(...color));
     }
 
-    copy(v) {
+    copy(v: Array<number> | Color): this {
         this[0] = v[0];
         this[1] = v[1];
         this[2] = v[2];
