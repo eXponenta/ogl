@@ -1,15 +1,49 @@
-import { Transform } from './Transform.js';
+import { Program } from './Program';
+import { Transform } from './Transform';
+import { GLContext, IDrawable } from './Renderer';
+import { Geometry } from './Geometry';
+
 import { Mat3 } from '../math/Mat3.js';
 import { Mat4 } from '../math/Mat4.js';
+import { nextUUID } from './uuid';
+import { Camera } from './Camera';
 
-let ID = 0;
+export interface IMeshInit<G extends Geometry = Geometry, P extends Program = Program> {
+    geometry: G;
+    program: P;
+    mode?: GLenum;
+    frustumCulled?: boolean;
+    renderOrder?: number;
+}
 
-export class Mesh extends Transform {
-    constructor(gl, { geometry, program, mode = gl.TRIANGLES, frustumCulled = true, renderOrder = 0 } = {}) {
+export type IRenderCallback = (args: { mesh: Mesh<any, any>, camera?: Camera }) => void;
+
+export class Mesh<G extends Geometry = Geometry, P extends Program = Program> extends Transform implements IDrawable {
+    public readonly gl: GLContext;
+    public readonly id: number;
+    public geometry: G;
+    public program: P;
+    public mode: GLenum;
+    public frustumCulled: boolean;
+    public renderOrder: number;
+
+    private modelViewMatrix: Mat4 = new Mat4();
+    private normalMatrix: Mat3 = new Mat3();
+
+    private beforeRenderCallbacks: Array<IRenderCallback> = [];
+    private afterRenderCallbacks: Array<IRenderCallback> = [];
+
+    constructor(gl: GLContext, { 
+        geometry, 
+        program, 
+        mode = gl.TRIANGLES, 
+        frustumCulled = true, 
+        renderOrder = 0 
+    }: IMeshInit<G, P>) {
         super();
         if (!gl.canvas) console.error('gl not passed as first argument to Mesh');
         this.gl = gl;
-        this.id = ID++;
+        this.id = nextUUID();
         this.geometry = geometry;
         this.program = program;
         this.mode = mode;
@@ -19,23 +53,23 @@ export class Mesh extends Transform {
 
         // Override sorting to force an order
         this.renderOrder = renderOrder;
-        this.modelViewMatrix = new Mat4();
-        this.normalMatrix = new Mat3();
-        this.beforeRenderCallbacks = [];
-        this.afterRenderCallbacks = [];
     }
 
-    onBeforeRender(f) {
+    onBeforeRender(f: IRenderCallback): this {
         this.beforeRenderCallbacks.push(f);
         return this;
     }
 
-    onAfterRender(f) {
+    onAfterRender(f: IRenderCallback): this {
         this.afterRenderCallbacks.push(f);
         return this;
     }
 
-    draw({ camera } = {}) {
+    preDraw() {
+
+    }
+
+    draw({ camera }: { camera?: Camera } = {}) {
         this.beforeRenderCallbacks.forEach((f) => f && f({ mesh: this, camera }));
         if (camera) {
             // Add empty matrix uniforms to program if unset

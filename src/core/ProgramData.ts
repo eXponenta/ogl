@@ -3,21 +3,30 @@
  * Used for reusing a native program for different Ogl programs without re-use of base shader.
  */
 
-let ID = 0;
+import { IDisposable } from "./IDisposable";
+import { GLContext } from "./Renderer";
+import { nextUUID } from "./uuid";
 
-export class ProgramData {
-    /**
-     * @type {WeakMap<WebGLRenderingContext | WebGL2RenderingContext, Map<string, ProgramData>>}
-     */
-    static CACHE = new Map();
+export interface IProgramSource {
+    vertex: string;
+    fragment: string;
+}
+
+export interface IUniformActiveInfo extends WebGLActiveInfo {
+    uniformName?: string;
+    isStructArray?: boolean;
+    structIndex?: number;
+    structProperty?: string;
+    isStruct: boolean;
+}
+
+export class ProgramData implements IDisposable, IProgramSource {
+    static CACHE = new WeakMap<GLContext, Map<string, ProgramData>>();
 
     /**
      * Create or return already existed program data for current shaders source
-     * @param { WebGLRenderingContext | WebGL2RenderingContext } gl 
-     * @param {{ vertex: string, fragment: string}} param1 
-     * @returns {ProgramData}
      */
-    static create (gl, { vertex, fragment }) {
+    static create (gl: GLContext, { vertex, fragment }: IProgramSource) {
         const store = ProgramData.CACHE.get(gl);
 
         if (!store) return new ProgramData(gl, { vertex, fragment });
@@ -33,11 +42,8 @@ export class ProgramData {
 
     /**
      * Store program data to cache
-     * @param { WebGLRenderingContext | WebGL2RenderingContext } gl
-     * @param { ProgramData } programData
-     * @returns { ProgramData }
      */
-    static set (gl, programData) {
+    static set (gl: GLContext, programData: ProgramData) {
         const store = this.CACHE.get(gl) || new Map();
 
         ProgramData.CACHE.set(gl, store);
@@ -56,8 +62,7 @@ export class ProgramData {
     }
 
     /**
-     * @param { WebGLRenderingContext | WebGL2RenderingContext } gl
-     * @param { ProgramData } programData
+     * Delete program data from cache 
      */
     static delete (gl, programData) {
         if (!programData || !programData.key) return false;
@@ -69,56 +74,33 @@ export class ProgramData {
         return store.delete(programData.key);
     }
 
+    public readonly id: number;
+    public readonly gl: GLContext;
+    public readonly vertex: string;
+    public readonly fragment: string;
+    public readonly uniformLocations = new Map<IUniformActiveInfo, WebGLUniformLocation>();
+    public readonly attributeLocations = new Map<WebGLActiveInfo, number>();
+
+    public program: WebGLProgram;
+    public usage: number = 0;
+    public attributeOrder: string = '';
+
     constructor(
-        gl,
+        gl: GLContext,
         {
             vertex,
             fragment,
-        }
+        }: IProgramSource
     ) {
-        /**
-         * @type {WebGLRenderingContext | WebGL2RenderingContext}
-         */
         this.gl = gl;
-
-        /**
-         * @type {string}
-         */
         this.vertex = vertex;
-
-        /**
-         * @type {string}
-         */
         this.fragment = fragment;
-
-        /**
-         * @type {WebGLProgram}
-         */
-        this.program = null;
-
-        /**
-         * @type {Map<WebGLActiveInfo, WebGLUniformLocation>}
-         */
-        this.uniformLocations = new Map();
-
-        /**
-         * @type {Map<WebGLActiveInfo, number>}
-         */
-        this.attributeLocations = new Map()
-
-        /**
-         * @type {string}
-         */
-        this.attributeOrder = '';
-
-        this.id = (1 << 8) + ID++;
-
-        this.usage = 0;
+        this.id = (1 << 8) + nextUUID();
 
         this.compile();
     }
 
-    get key() {
+    get key(): string {
         return this.vertex + this.fragment;
     }
 
@@ -126,7 +108,7 @@ export class ProgramData {
      * Compile or validate exist program
      * @returns { boolean }
      */
-    compile () {        
+    compile (): boolean {
         const gl = this.gl;
         const vertex = this.vertex;
         const fragment = this.fragment;
@@ -178,7 +160,7 @@ export class ProgramData {
         // Get active uniform locations
         let numUniforms = gl.getProgramParameter(this.program, gl.ACTIVE_UNIFORMS);
         for (let uIndex = 0; uIndex < numUniforms; uIndex++) {
-            let uniform = gl.getActiveUniform(this.program, uIndex);
+            let uniform = gl.getActiveUniform(this.program, uIndex) as IUniformActiveInfo;
             this.uniformLocations.set(uniform, gl.getUniformLocation(this.program, uniform.name));
 
             // split uniforms' names to separate array and struct declarations
@@ -214,6 +196,10 @@ export class ProgramData {
         return true;
     }
 
+    destroy(): void {
+        this.remove();        
+    }
+
     remove() {
         this.usage--;
 
@@ -223,9 +209,9 @@ export class ProgramData {
             ProgramData.delete(this.gl, this);
         }
 
-        this.id = -1;
-        this.fragment = null;
-        this.vertex = null;
+        (this as any).id = -1;
+        (this as any).fragment = null;
+        (this as any).vertex = null;
         this.attributeLocations.clear();
         this.attributeOrder = '';
         this.uniformLocations.clear();

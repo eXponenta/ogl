@@ -60,10 +60,10 @@ export interface IRenderOptions {
     scene: Transform;
     camera: Camera;
     target?: RenderTarget;
-    update?: boolean; 
+    update?: boolean;
     sort?: boolean;
     frustumCull?: boolean;
-    clear?: boolean; 
+    clear?: boolean;
 }
 
 export type GLContext = (WebGL2RenderingContext | WebGLRenderingContext) & { renderer?: Renderer };
@@ -92,6 +92,11 @@ export class Renderer {
 
     public parameters: Record<string, number>;
 
+    /**
+     * @deprecated
+     */
+    currentGeometry: string;
+
     constructor({
         canvas = document.createElement('canvas'),
         width = 300,
@@ -107,16 +112,16 @@ export class Renderer {
         autoClear = true,
         webgl = 2,
     }: Partial<IRendererInit> = {}) {
-        const attributes: WebGLContextAttributes = { 
-            alpha, 
-            depth, 
-            stencil, 
-            antialias, 
-            premultipliedAlpha, 
-            preserveDrawingBuffer, 
+        const attributes: WebGLContextAttributes = {
+            alpha,
+            depth,
+            stencil,
+            antialias,
+            premultipliedAlpha,
+            preserveDrawingBuffer,
             powerPreference
         };
- 
+
         this.dpr = dpr;
         this.alpha = alpha;
         this.color = true;
@@ -187,7 +192,7 @@ export class Renderer {
 
     drawElementsInstanced(...params: Parameters<WebGL2RenderingContext['drawElementsInstanced']>) { };
 
-    createVertexArray(...params: Parameters<WebGL2RenderingContext['createVertexArray']>) { };
+    createVertexArray(...params: Parameters<WebGL2RenderingContext['createVertexArray']>): WebGLVertexArrayObject { return null };
 
     bindVertexArray(...params: Parameters<WebGL2RenderingContext['bindVertexArray']>) { };
 
@@ -400,14 +405,14 @@ export class Renderer {
         return renderList;
     }
 
-    render({ 
-        scene, 
-        camera, 
-        target = null, 
-        update = true, 
-        sort = true, 
-        frustumCull = true, 
-        clear 
+    render({
+        scene,
+        camera,
+        target = null,
+        update = true,
+        sort = true,
+        frustumCull = true,
+        clear
     }: IRenderOptions) {
         if (target === null) {
             // make sure no render target bound so draws to canvas

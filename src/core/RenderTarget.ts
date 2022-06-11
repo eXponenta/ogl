@@ -1,9 +1,34 @@
 // TODO: test stencil and depth
-import { Texture } from './Texture.js';
+import { IDisposable } from './IDisposable';
+import { GLContext } from './Renderer';
+import { Texture, ITextureStyleInit } from './Texture';
 
-export class RenderTarget {
+export interface IRenderTargetInit extends ITextureStyleInit {
+    width: number;
+    height: number;
+    depth: boolean;
+    color: number;
+    stencil: boolean;
+    depthTexture: boolean;
+}
+
+export class RenderTarget implements IDisposable {
+    public readonly gl: GLContext;
+    public readonly depth: boolean;
+    public readonly textures: Texture[];
+    public readonly texture: Texture;
+    public readonly depthTexture: Texture;
+
+    public width: number;
+    public height: number;
+    public target: GLenum;
+    public buffer: WebGLFramebuffer;
+    public depthBuffer: WebGLRenderbuffer;
+    public stencilBuffer: WebGLRenderbuffer;
+    public depthStencilBuffer: WebGLRenderbuffer;
+
     constructor(
-        gl,
+        gl: GLContext,
         {
             width = gl.canvas.width,
             height = gl.canvas.height,
@@ -21,7 +46,7 @@ export class RenderTarget {
             internalFormat = format,
             unpackAlignment,
             premultiplyAlpha,
-        } = {}
+        }: Partial<IRenderTargetInit> = {}
     ) {
         this.gl = gl;
         this.width = width;
@@ -143,5 +168,10 @@ export class RenderTarget {
         }
 
         this.gl.renderer.bindFramebuffer({ target: this.target });
+    }
+
+    destroy(): void {
+        // todo 
+        // implement it
     }
 }

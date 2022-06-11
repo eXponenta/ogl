@@ -15,28 +15,65 @@
 // }
 
 // TODO: fit in transform feedback
+import { IDisposable } from './IDisposable';
+import { Program } from './Program';
+import { GLContext } from './Renderer';
+import { RenderState } from './State';
+import { nextUUID } from './uuid';
 
 import { Vec3 } from '../math/Vec3.js';
 
 const tempVec3 = new Vec3();
 
-let ID = 1;
 let ATTR_ID = 1;
 
 // To stop inifinite warnings
 let isBoundsWarned = false;
 
-export class Geometry {
+export interface IGeometryAttribute {
+    id: number;
+    size: number;
+    type: GLenum;
+    data: Uint16Array | Float32Array;
+    target: GLenum;
+    usage: GLenum;
+    normalized: boolean;
+    stride: number;
+    offset: number;
+    count: number;
+    divisor: number;
+    instanced: number;
+    needsUpdate: boolean;
+
+    buffer: WebGLBuffer;
+}
+
+export interface IGeometryBounds {
+    min: Vec3;
+    max: Vec3;
+    center: Vec3;
+    scale: Vec3;
+    radius: number;
+}
+
+export class Geometry implements IDisposable {
+    public readonly id: number;
+    public readonly gl: GLContext;
+    public readonly attributes: Record<string, IGeometryAttribute>;
+    public readonly VAOs: Record<string, WebGLVertexArrayObject> = {};
+    public readonly drawRange = { start: 0, count: 0 };
+    public readonly glState: RenderState;
+
+    public instancedCount = 0;
+    public isInstanced: boolean;
+    public bounds: IGeometryBounds;
+
     constructor(gl, attributes = {}) {
         if (!gl.canvas) console.error('gl not passed as first argument to Geometry');
         this.gl = gl;
         this.attributes = attributes;
-        this.id = ID++;
+        this.id = nextUUID();
 
-        // Store one VAO per program attribute locations order
-        this.VAOs = {};
-
-        this.drawRange = { start: 0, count: 0 };
         this.instancedCount = 0;
 
         // Unbind current VAO so that new buffers don't get added to active mesh
@@ -52,8 +89,8 @@ export class Geometry {
         }
     }
 
-    addAttribute(key, attr) {
-        this.attributes[key] = attr;
+    addAttribute(key: string, attr: Partial<IGeometryAttribute>) {
+        this.attributes[key] = attr as IGeometryAttribute;
 
         // Set options
         attr.id = ATTR_ID++; // TODO: currently unused, remove?
@@ -94,7 +131,7 @@ export class Geometry {
         }
     }
 
-    updateAttribute(attr) {
+    updateAttribute(attr: Partial<IGeometryAttribute>) {
         const isNewBuffer = !attr.buffer;
         if (isNewBuffer) attr.buffer = this.gl.createBuffer();
         if (this.glState.boundBuffer !== attr.buffer) {
@@ -109,11 +146,11 @@ export class Geometry {
         attr.needsUpdate = false;
     }
 
-    setIndex(value) {
+    setIndex(value: Partial<IGeometryAttribute>) {
         this.addAttribute('index', value);
     }
 
-    setDrawRange(start, count) {
+    setDrawRange(start: number, count: number) {
         this.drawRange.start = start;
         this.drawRange.count = count;
     }
@@ -122,13 +159,13 @@ export class Geometry {
         this.instancedCount = value;
     }
 
-    createVAO(program) {
+    createVAO(program: Program) {
         this.VAOs[program.attributeOrder] = this.gl.renderer.createVertexArray();
         this.gl.renderer.bindVertexArray(this.VAOs[program.attributeOrder]);
         this.bindAttributes(program);
     }
 
-    bindAttributes(program) {
+    bindAttributes(program: any) {
         // Link all attributes to program using gl.vertexAttribPointer
         program.attributeLocations.forEach((location, { name, type }) => {
             // If geometry missing a required shader attribute
@@ -200,7 +237,7 @@ export class Geometry {
         }
     }
 
-    getPosition() {
+    getPosition(): IGeometryAttribute | boolean {
         // Use position buffer, or min/max if available
         const attr = this.attributes.position;
         // if (attr.min) return [...attr.min, ...attr.max];
@@ -210,8 +247,8 @@ export class Geometry {
         return (isBoundsWarned = true);
     }
 
-    computeBoundingBox(attr) {
-        if (!attr) attr = this.getPosition();
+    computeBoundingBox(attr?: IGeometryAttribute) {
+        if (!attr) attr = this.getPosition() as IGeometryAttribute;
         const array = attr.data;
         const stride = attr.stride ? attr.stride / array.BYTES_PER_ELEMENT : attr.size;
 
@@ -252,8 +289,8 @@ export class Geometry {
         center.add(min, max).divide(2);
     }
 
-    computeBoundingSphere(attr) {
-        if (!attr) attr = this.getPosition();
+    computeBoundingSphere(attr?: IGeometryAttribute) {
+        if (!attr) attr = this.getPosition() as IGeometryAttribute;
         const array = attr.data;
         const stride = attr.stride ? attr.stride / array.BYTES_PER_ELEMENT : attr.size;
 
@@ -268,7 +305,11 @@ export class Geometry {
         this.bounds.radius = Math.sqrt(maxRadiusSq);
     }
 
-    remove() {
+    destroy(): void {
+        this.remove();
+    }
+
+    remove(): void {
         for (let key in this.VAOs) {
             this.gl.renderer.deleteVertexArray(this.VAOs[key]);
             delete this.VAOs[key];

@@ -3,19 +3,102 @@
 // TODO: need? encoding = linearEncoding
 // TODO: support non-compressed mipmaps uploads
 
+import type { IDisposable } from "./IDisposable";
+import type { GLContext } from "./Renderer";
+import { RenderState } from "./State";
+import { nextUUID } from "./uuid";
+
 const emptyPixel = new Uint8Array(4);
 
-function isPowerOf2(value) {
-    return (value & (value - 1)) === 0;
+const isPowerOf2 = (value: number) => (value & (value - 1)) === 0;
+
+export interface ICompressedImageFrame {
+    width: number;
+    height: number;
+    data: Uint8Array;
 }
 
-let ID = 1;
+export interface ICompressedImageData extends Array<ICompressedImageFrame> {
+    isCompressedTexture: boolean;
+}
 
-export class Texture {
+export type INativeImageSource = 
+    HTMLCanvasElement | 
+    HTMLImageElement | 
+    ImageBitmap | 
+    HTMLVideoElement | 
+    null;
+
+export type IImageSource = INativeImageSource | ICompressedImageData | null;
+
+export interface ITextureStyleInit {
+    target: GLenum;
+    type: GLenum;
+    format: GLenum;
+    internalFormat: GLenum;
+    wrapS: GLenum;
+    wrapT: GLenum;
+    minFilter: GLenum;
+    magFilter: GLenum;
+    premultiplyAlpha: boolean;
+    unpackAlignment: number;
+}
+
+export interface IBaseTextureInit extends ITextureStyleInit {
+    generateMipmaps: boolean;
+    flipY: boolean;
+    anisotropy: number;
+    level: number;
+}
+
+export interface IRegularTextureInit<T extends IImageSource> extends IBaseTextureInit {
+    image: T;
+}
+
+export interface IEmptyTextureInit extends IBaseTextureInit {
+    // used for RenderTargets or Data Textures
+    width: number;
+    height: number;
+}
+
+export type ITextureInit<T extends IImageSource> = IRegularTextureInit<T> | IEmptyTextureInit;
+
+export class Texture<T extends IImageSource = null> implements IDisposable {
+    public image: T;
+
+    public readonly gl: GLContext;
+    public readonly id: number;
+    public readonly type: GLenum;
+    public readonly target: GLenum;
+    public readonly format: GLenum;
+    public readonly internalFormat: GLenum;
+    public readonly unpackAlignment: number;
+    public readonly store: { image: T };
+    public readonly state: Partial<ITextureInit<T>>
+    public readonly glState: RenderState;
+
+    public wrapS: GLenum;
+    public wrapT: GLenum;
+    public generateMipmaps: boolean;
+    public minFilter: GLenum;
+    public magFilter: GLenum;
+    public premultiplyAlpha: boolean;
+    public flipY: boolean;
+    public anisotropy: number;
+    public level: number;
+
+    public width: number;
+    public height: number;
+
+    public needsUpdate: boolean = false;
+
+    texture: WebGLTexture;
+
+    onUpdate?: () => void;
+
     constructor(
-        gl,
+        gl: GLContext,
         {
-            image,
             target = gl.TEXTURE_2D,
             type = gl.UNSIGNED_BYTE,
             format = gl.RGBA,
@@ -30,14 +113,13 @@ export class Texture {
             flipY = target == gl.TEXTURE_2D ? true : false,
             anisotropy = 0,
             level = 0,
-            width, // used for RenderTargets or Data Textures
-            height = width,
-        } = {}
+            ...other
+        }: Partial<ITextureInit<T>> = {}
     ) {
         this.gl = gl;
-        this.id = ID++;
+        this.id = nextUUID();
 
-        this.image = image;
+        this.image = (other as IRegularTextureInit<T>).image;
         this.target = target;
         this.type = type;
         this.format = format;
@@ -50,10 +132,24 @@ export class Texture {
         this.premultiplyAlpha = premultiplyAlpha;
         this.unpackAlignment = unpackAlignment;
         this.flipY = flipY;
+
+        // not set yet
         this.anisotropy = Math.min(anisotropy, this.gl.renderer.parameters.maxAnisotropy);
         this.level = level;
-        this.width = width;
-        this.height = height;
+
+        if (this.image) {
+            if (Array.isArray(this.image)) {
+                this.width = this.image[0].width;
+                this.height = this.image[0].height;
+            } else {
+                this.width = this.image.width;
+                this.height = this.image.height;
+            }
+        } else {
+            this.width = (<IEmptyTextureInit> other).width || 0;
+            this.height = (<IEmptyTextureInit> other).height || this.width;          
+        }
+
         this.texture = this.gl.createTexture();
 
         this.store = {
@@ -64,12 +160,13 @@ export class Texture {
         this.glState = this.gl.renderer.state;
 
         // State store to avoid redundant calls for per-texture state
-        this.state = {};
-        this.state.minFilter = this.gl.NEAREST_MIPMAP_LINEAR;
-        this.state.magFilter = this.gl.LINEAR;
-        this.state.wrapS = this.gl.REPEAT;
-        this.state.wrapT = this.gl.REPEAT;
-        this.state.anisotropy = 0;
+        this.state = {
+            minFilter: this.gl.NEAREST_MIPMAP_LINEAR,
+            magFilter: this.gl.LINEAR,
+            wrapS: this.gl.REPEAT,
+            wrapT: this.gl.REPEAT,
+            anisotropy: 0,
+        };
     }
 
     bind() {
@@ -92,16 +189,17 @@ export class Texture {
         if (!needsUpdate) return;
         this.needsUpdate = false;
 
+        // this is NOT A GL GLOBAL STATE
         if (this.flipY !== this.glState.flipY) {
             this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, this.flipY);
             this.glState.flipY = this.flipY;
         }
-
+        // this is NOT A GL GLOBAL STATE
         if (this.premultiplyAlpha !== this.glState.premultiplyAlpha) {
             this.gl.pixelStorei(this.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, this.premultiplyAlpha);
             this.glState.premultiplyAlpha = this.premultiplyAlpha;
         }
-
+        // this is NOT A GL GLOBAL STATE
         if (this.unpackAlignment !== this.glState.unpackAlignment) {
             this.gl.pixelStorei(this.gl.UNPACK_ALIGNMENT, this.unpackAlignment);
             this.glState.unpackAlignment = this.unpackAlignment;
@@ -137,9 +235,9 @@ export class Texture {
         }
 
         if (this.image) {
-            if (this.image.width) {
-                this.width = this.image.width;
-                this.height = this.image.height;
+            if ((this.image as any).width) {
+                this.width = (this.image as any).width;
+                this.height = (this.image as any).height;
             }
 
             if (this.target === this.gl.TEXTURE_CUBE_MAP) {
@@ -157,9 +255,9 @@ export class Texture {
             } else if (ArrayBuffer.isView(this.image)) {
                 // Data texture
                 this.gl.texImage2D(this.target, this.level, this.internalFormat, this.width, this.height, 0, this.format, this.type, this.image);
-            } else if (this.image.isCompressedTexture) {
+            } else if ((this.image as ICompressedImageData).isCompressedTexture) {
                 // Compressed texture
-                for (let level = 0; level < this.image.length; level++) {
+                for (let level = 0; level < (this.image as ICompressedImageData).length; level++) {
                     this.gl.compressedTexImage2D(
                         this.target,
                         level,
@@ -172,12 +270,12 @@ export class Texture {
                 }
             } else {
                 // Regular texture
-                this.gl.texImage2D(this.target, this.level, this.internalFormat, this.format, this.type, this.image);
+                this.gl.texImage2D(this.target, this.level, this.internalFormat, this.format, this.type, this.image as INativeImageSource);
             }
 
             if (this.generateMipmaps) {
                 // For WebGL1, if not a power of 2, turn off mips, set wrapping to clamp to edge and minFilter to linear
-                if (!this.gl.renderer.isWebgl2 && (!isPowerOf2(this.image.width) || !isPowerOf2(this.image.height))) {
+                if (!this.gl.renderer.isWebgl2 && (!isPowerOf2(this.width) || !isPowerOf2(this.height))) {
                     this.generateMipmaps = false;
                     this.wrapS = this.wrapT = this.gl.CLAMP_TO_EDGE;
                     this.minFilter = this.gl.LINEAR;
@@ -213,5 +311,11 @@ export class Texture {
             }
         }
         this.store.image = this.image;
+    }
+
+    destroy(): void {
+        this.gl.deleteTexture(this.texture);
+        this.store.image = null;
+        this.image = null;
     }
 }

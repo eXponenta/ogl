@@ -2,20 +2,53 @@
 // TODO: upload identity matrix if null ?
 // TODO: sampler Cube
 
-import { ProgramData } from "./ProgramData.js";
-
-let ID = 1;
+import { IDisposable } from "./IDisposable";
+import { IProgramSource, ProgramData } from "./ProgramData";
+import { GLContext } from "./Renderer";
+import { IBlendEquationState, IBlendFuncState } from "./State";
+import { nextUUID } from "./uuid";
 
 // cache of typed arrays used to flatten uniform arrays
 const arrayCacheF32 = {};
 
-export class Program {
+export interface IUniformData<T = any> {
+    value: T;
+}
+
+export type IDefaultUniforms = 'modelMatrix' | 'projectionMatrix' | 'cameraPosition' | 'viewMatrix' | 'modelViewMatrix' | 'normalMatrix';
+
+export interface IProgramInit<U extends string = ''> extends IProgramSource {
+    uniforms: Record<U, IUniformData>;
+    transparent: boolean;
+    cullFace: GLenum;
+    frontFace: GLenum;
+    depthTest: boolean;
+    depthWrite: boolean;
+    depthFunc: GLenum;
+}
+
+export class Program<U extends string = ''> implements IDisposable {
+    public readonly id: number;
+    public readonly gl: GLContext;
+    public readonly uniforms: Record<U | IDefaultUniforms, IUniformData>;
+
+    public programData: ProgramData;
+    public transparent: boolean;
+    public cullFace: GLenum;
+    public frontFace: GLenum;
+    public depthTest: boolean;
+    public depthWrite: boolean;
+    public depthFunc: GLenum;
+
+    private blendFunc: IBlendFuncState;
+    private blendEquation: IBlendEquationState;
+
     constructor(
-        gl,
+        gl: GLContext,
         {
             vertex,
             fragment,
-            uniforms = {},
+            uniforms = {} as any,
 
             transparent = false,
             cullFace = gl.BACK,
@@ -23,12 +56,12 @@ export class Program {
             depthTest = true,
             depthWrite = true,
             depthFunc = gl.LESS,
-        } = {}
+        }: Partial<IProgramInit<U>> = {}
     ) {
         if (!gl.canvas) console.error('gl not passed as fist argument to Program');
         this.gl = gl;
-        this.uniforms = uniforms;
-        this.id = ID++;
+        this.uniforms = uniforms as Record<U | IDefaultUniforms, IUniformData>;
+        this.id = nextUUID();
 
         if (!vertex) console.warn('vertex shader not supplied');
         if (!fragment) console.warn('fragment shader not supplied');
@@ -40,8 +73,8 @@ export class Program {
         this.depthTest = depthTest;
         this.depthWrite = depthWrite;
         this.depthFunc = depthFunc;
-        this.blendFunc = {};
-        this.blendEquation = {};
+        this.blendFunc = {} as any;
+        this.blendEquation = {} as any;
 
         // set default blendFunc if transparent flagged
         if (this.transparent && !this.blendFunc.src) {
@@ -65,7 +98,7 @@ export class Program {
         return this.programData.attributeLocations;
     }
 
-    get attributeOrder() {
+    get attributeOrder(): string {
         // we need this because a Geometry use it
         return this.programData.attributeOrder;
     }
@@ -79,15 +112,18 @@ export class Program {
         return this.programData.program;
     }
 
-    setBlendFunc(src, dst, srcAlpha, dstAlpha) {
+    setBlendFunc(src: GLenum, dst: GLenum, srcAlpha?: GLenum, dstAlpha?: GLenum) {
         this.blendFunc.src = src;
         this.blendFunc.dst = dst;
         this.blendFunc.srcAlpha = srcAlpha;
         this.blendFunc.dstAlpha = dstAlpha;
+
+        // TODO
+        // FIX BUG
         if (src) this.transparent = true;
     }
 
-    setBlendEquation(modeRGB, modeAlpha) {
+    setBlendEquation(modeRGB: GLenum, modeAlpha?: GLenum) {
         this.blendEquation.modeRGB = modeRGB;
         this.blendEquation.modeAlpha = modeAlpha;
     }
@@ -106,6 +142,8 @@ export class Program {
         this.gl.renderer.setFrontFace(this.frontFace);
         this.gl.renderer.setDepthMask(this.depthWrite);
         this.gl.renderer.setDepthFunc(this.depthFunc);
+
+        // TODO fix BUG
         if (this.blendFunc.src)
             this.gl.renderer.setBlendFunc(this.blendFunc.src, this.blendFunc.dst, this.blendFunc.srcAlpha, this.blendFunc.dstAlpha);
         this.gl.renderer.setBlendEquation(this.blendEquation.modeRGB, this.blendEquation.modeAlpha);
@@ -179,6 +217,10 @@ export class Program {
 
         this.applyState();
         if (flipFaces) gl.renderer.setFrontFace(this.frontFace === gl.CCW ? gl.CW : gl.CCW);
+    }
+
+    destroy(): void {
+        this.remove();
     }
 
     remove() {
