@@ -90,7 +90,7 @@ export class GLTFLoader {
     }
 
     static async parse(gl: GLContext, desc, dir) {
-        if (desc.asset === undefined || desc.asset.version[0] < 2) console.warn('Only GLTF >=2.0 supported. Attempting to parse.');
+        if (desc.asset == null || desc.asset.version[0] < 2) console.warn('Only GLTF >=2.0 supported. Attempting to parse.');
 
         if (desc.extensionsRequired?.includes('KHR_texture_basisu') && !this.basisManager)
             console.warn('KHR_texture_basisu extension required but no manager supplied. Use .setBasisManager()');
@@ -314,7 +314,7 @@ export class GLTFLoader {
                 image.name = name;
                 if (uri) {
                     image.src = this.resolveURI(uri, dir);
-                } else if (bufferViewIndex !== undefined) {
+                } else if (bufferViewIndex != null) {
                     const { data } = bufferViews[bufferViewIndex];
                     const blob = new Blob([data], { type: mimeType });
                     image.src = URL.createObjectURL(blob);
@@ -333,7 +333,7 @@ export class GLTFLoader {
     }
 
     static createTexture(gl, desc, images, { sampler: samplerIndex = null, source: sourceIndex = null, name = null, extensions = null }) {
-        if (sourceIndex === undefined && !!extensions) {
+        if (sourceIndex == null && !!extensions) {
             // Basis extension source index
             if (extensions.KHR_texture_basisu) sourceIndex = extensions.KHR_texture_basisu.source;
         }
@@ -346,7 +346,7 @@ export class GLTFLoader {
             wrapS: gl.REPEAT, // Repeat by default, opposed to OGL's clamp by default
             wrapT: gl.REPEAT,
         };
-        const sampler = samplerIndex !== undefined ? desc.samplers[samplerIndex] : null;
+        const sampler = samplerIndex != null ? desc.samplers[samplerIndex] : null;
         if (sampler) {
             ['magFilter', 'minFilter', 'wrapS', 'wrapT'].forEach((prop) => {
                 if (sampler[prop]) options[prop] = sampler[prop];
@@ -491,7 +491,7 @@ export class GLTFLoader {
                     desc.nodes.forEach(({ mesh, skin, extras }) => {
                         if (mesh === meshIndex) {
                             numInstances++;
-                            if (skin !== undefined) skinIndices.push(skin);
+                            if (skin != null) skinIndices.push(skin);
                             if (extras && extras.lightmap_scale_offset) isLightmap = true;
                         }
                     });
@@ -551,7 +551,7 @@ export class GLTFLoader {
             }) => {
                 // TODO: materials
                 const program = NormalProgram(gl) as Program & { gltfMaterial: any };
-                if (materialIndex !== undefined) {
+                if (materialIndex != null) {
                     program.gltfMaterial = materials[materialIndex];
                 }
 
@@ -563,7 +563,7 @@ export class GLTFLoader {
                 }
 
                 // Add index attribute if found
-                if (indices !== undefined) {
+                if (indices != numInstances) {
                     geometry.addAttribute('index', this.parseAccessor(indices, desc, bufferViews));
                 }
 
@@ -677,7 +677,7 @@ export class GLTFLoader {
                 node.extensions = extensions;
 
                 // Need to attach to node as may have same material but different lightmap
-                if (extras && extras.lightmapTexture !== undefined) {
+                if (extras && extras.lightmapTexture != null) {
                     extras.lightmapTexture.texture = this.createTexture(gl, desc, images, { source: extras.lightmapTexture.index });
                 }
 
@@ -696,10 +696,10 @@ export class GLTFLoader {
                 let isInstanced = false;
                 let isFirstInstance = true;
                 let isInstancedMatrix = false;
-                let isSkin = skinIndex !== undefined;
+                let isSkin = skinIndex != null;
 
                 // add mesh if included
-                if (meshIndex !== undefined) {
+                if (meshIndex != null) {
                     if (isSkin) {
                         meshes[meshIndex].primitives[meshes[meshIndex].primitives.instanceCount].forEach((mesh) => {
                             mesh.extras = extras;
@@ -892,7 +892,7 @@ export class GLTFLoader {
                 color: { value: new Vec3().set(lightDesc.color || 1) },
             };
             // Apply intensity directly to color
-            if (lightDesc.intensity !== undefined) light.color.value.multiply(lightDesc.intensity);
+            if (lightDesc.intensity != null) light.color.value.multiply(lightDesc.intensity);
 
             switch (lightDesc.type) {
                 case 'directional':
