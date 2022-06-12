@@ -3,16 +3,28 @@ import { Program } from '../core/Program.js';
 import { Mesh } from '../core/Mesh.js';
 import { Vec2 } from '../math/Vec2.js';
 import { Triangle } from './Triangle.js';
+import { GLContext } from '../core/Renderer.js';
+import type { Texture } from '../core/Texture.js';
+import type { ISwapChain } from './Post.js';
 
 export class Flowmap {
+    public readonly gl: GLContext;
+
+    private uniform: { value: Texture<Float32Array> };
+    private mask: ISwapChain;
+    private mouse: Vec2 = new Vec2();
+    private velocity: Vec2 = new Vec2();
+    private aspect: number = 1;
+    private mesh: Mesh;
+
     constructor(
-        gl,
+        gl: GLContext,
         {
             size = 128, // default size of the render targets
             falloff = 0.3, // size of the stamp, percentage of the size
             alpha = 1, // opacity of the stamp
             dissipation = 0.98, // affects the speed that the stamp fades. Closer to 1 is slower
-            type, // Pass in gl.FLOAT to force it, defaults to gl.HALF_FLOAT
+            type = (<any>gl).HALF_FLOAT, // Pass in gl.FLOAT to force it, defaults to gl.HALF_FLOAT
         } = {}
     ) {
         const _this = this;
@@ -37,8 +49,6 @@ export class Flowmap {
         {
             createFBOs();
 
-            this.aspect = 1;
-            this.mouse = new Vec2();
             this.velocity = new Vec2();
 
             this.mesh = initProgram();
@@ -46,7 +56,7 @@ export class Flowmap {
 
         function createFBOs() {
             // Requested type not supported, fall back to half float
-            if (!type) type = gl.HALF_FLOAT || gl.renderer.extensions['OES_texture_half_float'].HALF_FLOAT_OES;
+            if (!type) type = (<any>gl).HALF_FLOAT || gl.renderer.extensions['OES_texture_half_float'].HALF_FLOAT_OES;
 
             let minFilter = (() => {
                 if (gl.renderer.isWebgl2) return gl.LINEAR;
@@ -59,7 +69,7 @@ export class Flowmap {
                 height: size,
                 type,
                 format: gl.RGBA,
-                internalFormat: gl.renderer.isWebgl2 ? (type === gl.FLOAT ? gl.RGBA32F : gl.RGBA16F) : gl.RGBA,
+                internalFormat: gl.renderer.isWebgl2 ? (type === gl.FLOAT ? (<any>gl).RGBA32F : (<any>gl).RGBA16F) : gl.RGBA,
                 minFilter,
                 depth: false,
             };
@@ -127,7 +137,7 @@ const fragment = /* glsl */ `
     uniform float uFalloff;
     uniform float uAlpha;
     uniform float uDissipation;
-    
+
     uniform float uAspect;
     uniform vec2 uMouse;
     uniform vec2 uVelocity;

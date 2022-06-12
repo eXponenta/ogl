@@ -35,7 +35,7 @@ export interface IRenderPass {
     textureUniform: string;
 }
 
-interface ISwapChain {
+export interface ISwapChain {
     read: RenderTarget;
     write: RenderTarget;
     swap(): void;
