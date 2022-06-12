@@ -57,7 +57,7 @@ export interface IRendererInit {
 
 export interface IRenderOptions {
     scene: Transform;
-    camera: Camera;
+    camera?: Camera;
     target?: RenderTarget;
     update?: boolean;
     sort?: boolean;
@@ -448,7 +448,7 @@ export class Renderer {
 
     render({
         scene,
-        camera,
+        camera = null,
         target = null,
         update = true,
         sort = true,

@@ -27,7 +27,7 @@ export interface IProgramInit<U extends string = ''> extends IProgramSource {
     depthFunc: GLenum;
 }
 
-export class Program<U extends string = ''> implements IDisposable {
+export class Program<U extends string = any> implements IDisposable {
     public readonly id: number;
     public readonly gl: GLContext;
     public readonly uniforms: Record<U | IDefaultUniforms, IUniformData>;

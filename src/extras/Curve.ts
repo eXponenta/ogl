@@ -1,8 +1,10 @@
 import { Vec3 } from '../math/Vec3.js';
 
-const CATMULLROM = 'catmullrom';
-const CUBICBEZIER = 'cubicbezier';
-const QUADRATICBEZIER = 'quadraticbezier';
+export const enum CURVE_TYPE {
+    CATMULLROM = 'catmullrom',
+    CUBICBEZIER = 'cubicbezier',
+    QUADRATICBEZIER = 'quadraticbezier'
+}
 
 // temp
 const _a0 = new Vec3(),
@@ -16,7 +18,7 @@ const _a0 = new Vec3(),
  * @param {*} a
  * @param {*} b
  */
-function getCtrlPoint(points, i, a = 0.168, b = 0.168) {
+function getCtrlPoint(points: Vec3[], i, a = 0.168, b = 0.168) {
     if (i < 1) {
         _a0.sub(points[1], points[0]).scale(a).add(points[0]);
     } else {
@@ -58,15 +60,33 @@ function getCubicBezierPoint(t, p0, c0, c1, p1) {
     return ret;
 }
 
+export interface ICurveInit {
+    points: Array<Vec3>;
+    divisions: number;
+    type: CURVE_TYPE;
+}
+
 export class Curve {
-    constructor({ points = [new Vec3(0, 0, 0), new Vec3(0, 1, 0), new Vec3(1, 1, 0), new Vec3(1, 0, 0)], divisions = 12, type = CATMULLROM } = {}) {
+    static CATMULLROM = CURVE_TYPE.CATMULLROM;
+    static CUBICBEZIER = CURVE_TYPE.CUBICBEZIER;
+    static QUADRATICBEZIER = CURVE_TYPE.QUADRATICBEZIER;
+
+    public points: Array<Vec3>;
+    public divisions: number;
+    public type: CURVE_TYPE;
+
+    constructor({
+        points = [new Vec3(0, 0, 0), new Vec3(0, 1, 0), new Vec3(1, 1, 0), new Vec3(1, 0, 0)],
+        divisions = 12,
+        type = CURVE_TYPE.CATMULLROM
+    }: Partial<ICurveInit> = {}) {
         this.points = points;
         this.divisions = divisions;
         this.type = type;
     }
 
-    _getQuadraticBezierPoints(divisions = this.divisions) {
-        const points = [];
+    private _getQuadraticBezierPoints(divisions = this.divisions): Vec3[] {
+        const points: Array<Vec3> = [];
         const count = this.points.length;
 
         if (count < 3) {
@@ -98,8 +118,8 @@ export class Curve {
         return points;
     }
 
-    _getCubicBezierPoints(divisions = this.divisions) {
-        const points = [];
+    private _getCubicBezierPoints(divisions = this.divisions): Vec3[] {
+        const points: Array<Vec3> = [];
         const count = this.points.length;
 
         if (count < 4) {
@@ -133,8 +153,8 @@ export class Curve {
         return points;
     }
 
-    _getCatmullRomPoints(divisions = this.divisions, a = 0.168, b = 0.168) {
-        const points = [];
+    private _getCatmullRomPoints(divisions = this.divisions, a = 0.168, b = 0.168): Vec3[] {
+        const points: Array<Vec3> = [];
         const count = this.points.length;
 
         if (count <= 2) {
@@ -149,7 +169,7 @@ export class Curve {
                 const [c0, c1] = getCtrlPoint(this.points, i - 1, a, b);
                 const c = new Curve({
                     points: [p0, c0, c1, p],
-                    type: CUBICBEZIER,
+                    type: CURVE_TYPE.CUBICBEZIER,
                 });
                 points.pop();
                 points.push(...c.getPoints(divisions));
@@ -160,18 +180,18 @@ export class Curve {
         return points;
     }
 
-    getPoints(divisions = this.divisions, a = 0.168, b = 0.168) {
+    getPoints(divisions = this.divisions, a = 0.168, b = 0.168): Vec3[] {
         const type = this.type;
 
-        if (type === QUADRATICBEZIER) {
+        if (type === CURVE_TYPE.QUADRATICBEZIER) {
             return this._getQuadraticBezierPoints(divisions);
         }
 
-        if (type === CUBICBEZIER) {
+        if (type === CURVE_TYPE.CUBICBEZIER) {
             return this._getCubicBezierPoints(divisions);
         }
 
-        if (type === CATMULLROM) {
+        if (type === CURVE_TYPE.CATMULLROM) {
             return this._getCatmullRomPoints(divisions, a, b);
         }
 
@@ -179,6 +199,3 @@ export class Curve {
     }
 }
 
-Curve.CATMULLROM = CATMULLROM;
-Curve.CUBICBEZIER = CUBICBEZIER;
-Curve.QUADRATICBEZIER = QUADRATICBEZIER;

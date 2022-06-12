@@ -112,7 +112,7 @@ export class Vec3 extends Array<number> {
         return this;
     }
 
-    scale(v: Vec3): this {
+    scale(v: number): this {
         Vec3Func.scale(this, this, v);
         return this;
     }

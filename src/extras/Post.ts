@@ -4,31 +4,81 @@ import { Program } from '../core/Program.js';
 import { Mesh } from '../core/Mesh.js';
 import { RenderTarget } from '../core/RenderTarget.js';
 import { Triangle } from './Triangle.js';
+import type { GLContext } from '../core/Renderer.js';
+import type { Geometry } from '../core/Geometry.js';
+
+export interface IPostInit {
+    width: number;
+    height: number;
+    dpr: number;
+    wrapS?: GLenum;
+    wrapT?: GLenum;
+    minFilter?: GLenum;
+    magFilter?: GLenum;
+    geometry?: Geometry;
+    targetOnly?: boolean;
+}
+
+export interface IRenderPassInit {
+    vertex: string;
+    fragment: string;
+    uniforms: Record<string, { value: any }> | {};
+    enabled: boolean;
+    textureUniform: string;
+}
+
+export interface IRenderPass {
+    mesh: Mesh;
+    program: Program;
+    uniforms: Record<string, { value: any }> | {};
+    enabled: boolean;
+    textureUniform: string;
+}
+
+interface ISwapChain {
+    read: RenderTarget;
+    write: RenderTarget;
+    swap(): void;
+}
 
 export class Post {
+    public readonly gl: GLContext;
+    public readonly options: {
+        wrapS: GLenum;
+        wrapT: GLenum;
+        minFilter: GLenum;
+        magFilter: GLenum;
+        width: number;
+        height: number;
+    };
+    public readonly geometry: Geometry;
+    public readonly targetOnly: boolean;
+
+    public width: number;
+    public height: number;
+    public dpr: number;
+    public passes: IRenderPass[];
+
+    private uniform: { value: any } = { value: null };
+    private fbo: ISwapChain;
+
     constructor(
-        gl,
+        gl: GLContext,
         {
-            width,
-            height,
-            dpr,
+            width = undefined,
+            height = undefined,
+            dpr = undefined,
             wrapS = gl.CLAMP_TO_EDGE,
             wrapT = gl.CLAMP_TO_EDGE,
             minFilter = gl.LINEAR,
             magFilter = gl.LINEAR,
             geometry = new Triangle(gl),
             targetOnly = null,
-        } = {}
+        } : Partial<IPostInit>  = {}
     ) {
         this.gl = gl;
-
-        this.options = { wrapS, wrapT, minFilter, magFilter };
-
-        this.passes = [];
-
+        this.options = { wrapS, wrapT, minFilter, magFilter, width, height };
         this.geometry = geometry;
-
-        this.uniform = { value: null };
         this.targetOnly = targetOnly;
 
         const fbo = (this.fbo = {
@@ -44,7 +94,13 @@ export class Post {
         this.resize({ width, height, dpr });
     }
 
-    addPass({ vertex = defaultVertex, fragment = defaultFragment, uniforms = {}, textureUniform = 'tMap', enabled = true } = {}) {
+    addPass({
+        vertex = defaultVertex,
+        fragment = defaultFragment,
+        uniforms = {},
+        textureUniform = 'tMap',
+        enabled = true
+    }: Partial<IRenderPassInit> = {}) {
         uniforms[textureUniform] = { value: this.fbo.read.texture };
 
         const program = new Program(this.gl, { vertex, fragment, uniforms });
@@ -62,7 +118,7 @@ export class Post {
         return pass;
     }
 
-    resize({ width, height, dpr } = {}) {
+    resize({ width, height, dpr }: { width?: number; height?: number; dpr?: number } = {}) {
         if (dpr) this.dpr = dpr;
         if (width) {
             this.width = width;

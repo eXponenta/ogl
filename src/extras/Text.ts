@@ -1,3 +1,32 @@
+// TODO Port to es6
+
+export interface IMSDFFont {
+    chars: Array<any>;
+    common: {
+        lineHeight: number;
+        base: number;
+        scaleW: number;
+        scaleH: number;
+    };
+    kernings: Array<{
+        first: number;
+        second: number;
+        amount: number;
+    }>;
+}
+
+export interface ITextInit {
+    font: IMSDFFont;
+    text: string;
+    width?: number;
+    align?: 'left' | 'right' | 'center';
+    size?: number;
+    letterSpacing?: number;
+    lineHeight?: number;
+    wordSpacing?: number;
+    wordBreak?: boolean;
+};
+
 export function Text({
     font,
     text,
@@ -8,7 +37,7 @@ export function Text({
     lineHeight = 1.4,
     wordSpacing = 0,
     wordBreak = false,
-}) {
+}: ITextInit) {
     const _this = this;
     let glyphs, buffers;
     let fontHeight, baseline, scale;

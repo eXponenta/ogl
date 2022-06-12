@@ -1,4 +1,5 @@
 import { Program } from '../core/Program.js';
+import { GLContext } from '../core/Renderer.js';
 
 const vertex = /* glsl */ `
     precision highp float;
@@ -31,7 +32,8 @@ const fragment = /* glsl */ `
     }
 `;
 
-export function NormalProgram(gl) {
+// TODO Port to es6 class
+export function NormalProgram(gl: GLContext) {
     return new Program(gl, {
         vertex: vertex,
         fragment: fragment,
