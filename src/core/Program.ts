@@ -163,11 +163,11 @@ export class Program<U extends string = any> implements INativeObjectHolder {
                 continue;
             }
 
-            if (uniform.value.texture) {
-                uniform.value.prepare(context);
-            } else if (uniform.value.length && uniform.value[0].texture) {
+            if (uniform.value.prepare) {
+                uniform.value.prepare({ context });
+            } else if (uniform.value.length && uniform.value[0].prepare) {
                 for(let t of uniform.value) {
-                    t.prepare(context);
+                    t.prepare({ context });
                 }
             }
         }
@@ -182,12 +182,12 @@ export class Program<U extends string = any> implements INativeObjectHolder {
         const uniforms = this.uniforms;
         const programData = this.programData;
         const uniformLocations = this.programData.uniformLocations;
-        const programActive = gl.renderer.state.currentProgram === programData.id;
+        const programActive = context.state.currentProgram === programData.id;
 
         // Avoid gl call if program already in use
         if (!programActive) {
             gl.useProgram(programData.program);
-            gl.renderer.state.currentProgram = programData.id;
+            context.state.currentProgram = programData.id;
         }
 
         // Set only the active uniforms found in the shader

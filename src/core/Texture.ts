@@ -255,7 +255,7 @@ export class Texture<T extends IImageSource = null> implements INativeObjectHold
         }
 
         const ext = context.getExtension('EXT_texture_filter_anisotropic');
-        const anisotropy = ext ? Math.min(this.anisotropy, gl.getParameter(ext.TEXTURE_MAX_ANISOTROPY_EXT)) : 0;
+        const anisotropy = ext ? Math.min(this.anisotropy, gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT)) : 0;
 
         if (anisotropy && anisotropy !== this.state.anisotropy) {
             gl.texParameterf(
