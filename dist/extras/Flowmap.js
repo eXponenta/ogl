@@ -8,8 +8,11 @@ export class Flowmap {
     falloff = 0.3, // size of the stamp, percentage of the size
     alpha = 1, // opacity of the stamp
     dissipation = 0.98, // affects the speed that the stamp fades. Closer to 1 is slower
-    type, // Pass in gl.FLOAT to force it, defaults to gl.HALF_FLOAT
+    type = gl.HALF_FLOAT, // Pass in gl.FLOAT to force it, defaults to gl.HALF_FLOAT
      } = {}) {
+        this.mouse = new Vec2();
+        this.velocity = new Vec2();
+        this.aspect = 1;
         const _this = this;
         this.gl = gl;
         // output uniform containing render target textures
@@ -27,8 +30,6 @@ export class Flowmap {
         };
         {
             createFBOs();
-            this.aspect = 1;
-            this.mouse = new Vec2();
             this.velocity = new Vec2();
             this.mesh = initProgram();
         }
@@ -107,7 +108,7 @@ const fragment = /* glsl */ `
     uniform float uFalloff;
     uniform float uAlpha;
     uniform float uDissipation;
-    
+
     uniform float uAspect;
     uniform vec2 uMouse;
     uniform vec2 uVelocity;

@@ -1,40 +1,33 @@
-export class Polyline {
-    constructor(gl: any, { points, vertex, fragment, uniforms, attributes, }: {
-        points: any;
-        vertex?: string;
-        fragment?: string;
-        uniforms?: {};
-        attributes?: {};
-    });
-    gl: any;
-    points: any;
-    count: any;
-    position: Float32Array;
-    prev: Float32Array;
-    next: Float32Array;
-    geometry: Geometry;
-    resolution: {
-        value: Vec2;
-    };
-    dpr: {
-        value: number;
-    };
-    thickness: {
-        value: number;
-    };
-    color: {
-        value: Color;
-    };
-    miter: {
-        value: number;
-    };
-    program: Program<never>;
-    mesh: Mesh<Geometry, Program<never>>;
+import { IGeometryAttributeInit } from '../core/Geometry.js';
+import { IUniformData } from '../core/Program.js';
+import { Vec3 } from '../math/Vec3.js';
+import type { GLContext } from '../core/Renderer.js';
+declare type TDefaultUniforms = 'uResolution' | 'uDPR' | 'uThickness' | 'uColor' | 'uMiter';
+export interface IPolylineInit {
+    points: Array<Vec3>;
+    vertex?: string;
+    fragment?: string;
+    uniforms?: Partial<Record<string | TDefaultUniforms, IUniformData>>;
+    attributes?: Record<string, IGeometryAttributeInit>;
+}
+export declare class Polyline {
+    readonly gl: GLContext;
+    private points;
+    private count;
+    private geometry;
+    private position;
+    private prev;
+    private next;
+    private resolution;
+    private dpr;
+    private thickness;
+    private color;
+    private miter;
+    private program;
+    private mesh;
+    constructor(gl: GLContext, { points, // Array of Vec3s
+    vertex, fragment, uniforms, attributes, }: IPolylineInit);
     updateGeometry(): void;
     resize(): void;
 }
-import { Geometry } from "../core/Geometry.js";
-import { Vec2 } from "../math/Vec2.js";
-import { Color } from "../math/Color.js";
-import { Program } from "../core/Program.js";
-import { Mesh } from "../core/Mesh.js";
+export {};

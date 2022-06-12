@@ -1,11 +1,13 @@
-export class BasisManager {
-    constructor(workerSrc: any);
-    onMessage({ data }: {
-        data: any;
-    }): void;
-    queue: Map<any, any>;
+export declare class BasisManager {
+    private readonly queue;
+    private worker;
+    constructor(workerSrc: string);
     getSupportedFormat(): "none" | "pvrtc" | "s3tc" | "etc1" | "astc" | "bptc";
-    initWorker(workerSrc: any): void;
-    worker: Worker;
-    parseTexture(buffer: any): Promise<any>;
+    initWorker(workerSrc: string): void;
+    onMessage({ data }: MessageEvent<{
+        id: number;
+        error: string;
+        image: any;
+    }>): void;
+    parseTexture(buffer: ArrayBuffer): Promise<any>;
 }

@@ -1,27 +1,22 @@
-export class Flowmap {
-    constructor(gl: any, { size, falloff, alpha, dissipation, type, }?: {
+import { GLContext } from '../core/Renderer.js';
+export declare class Flowmap {
+    readonly gl: GLContext;
+    private uniform;
+    private mask;
+    private mouse;
+    private velocity;
+    private aspect;
+    private mesh;
+    constructor(gl: GLContext, { size, // default size of the render targets
+    falloff, // size of the stamp, percentage of the size
+    alpha, // opacity of the stamp
+    dissipation, // affects the speed that the stamp fades. Closer to 1 is slower
+    type, }?: {
         size?: number;
         falloff?: number;
         alpha?: number;
         dissipation?: number;
-        type: any;
+        type?: any;
     });
-    gl: any;
-    uniform: {
-        value: any;
-    };
-    mask: {
-        read: any;
-        write: any;
-        swap: () => void;
-    };
-    aspect: number;
-    mouse: Vec2;
-    velocity: Vec2;
-    mesh: Mesh<Triangle, Program<"tMap" | "uFalloff" | "uAlpha" | "uDissipation" | "uAspect" | "uMouse" | "uVelocity">>;
     update(): void;
 }
-import { Vec2 } from "../math/Vec2.js";
-import { Triangle } from "./Triangle.js";
-import { Program } from "../core/Program.js";
-import { Mesh } from "../core/Mesh.js";

@@ -5,6 +5,7 @@ import { RenderTarget } from '../core/RenderTarget.js';
 import { Triangle } from './Triangle.js';
 export class Post {
     constructor(gl, { width = undefined, height = undefined, dpr = undefined, wrapS = gl.CLAMP_TO_EDGE, wrapT = gl.CLAMP_TO_EDGE, minFilter = gl.LINEAR, magFilter = gl.LINEAR, geometry = new Triangle(gl), targetOnly = null, } = {}) {
+        this.passes = [];
         this.uniform = { value: null };
         this.gl = gl;
         this.options = { wrapS, wrapT, minFilter, magFilter, width, height };

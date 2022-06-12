@@ -1,5 +1,6 @@
 import { Program } from '../core/Program.js';
 import { Mesh } from '../core/Mesh.js';
+import { RenderTarget } from '../core/RenderTarget.js';
 import type { GLContext } from '../core/Renderer.js';
 import type { Geometry } from '../core/Geometry.js';
 export interface IPostInit {
@@ -31,6 +32,11 @@ export interface IRenderPass {
     enabled: boolean;
     textureUniform: string;
 }
+export interface ISwapChain {
+    read: RenderTarget;
+    write: RenderTarget;
+    swap(): void;
+}
 export declare class Post {
     readonly gl: GLContext;
     readonly options: {
@@ -43,15 +49,15 @@ export declare class Post {
     };
     readonly geometry: Geometry;
     readonly targetOnly: boolean;
+    readonly passes: IRenderPass[];
     width: number;
     height: number;
     dpr: number;
-    passes: IRenderPass[];
     private uniform;
     private fbo;
     constructor(gl: GLContext, { width, height, dpr, wrapS, wrapT, minFilter, magFilter, geometry, targetOnly, }?: Partial<IPostInit>);
     addPass({ vertex, fragment, uniforms, textureUniform, enabled }?: Partial<IRenderPassInit>): {
-        mesh: Mesh<Geometry, Program<string>>;
+        mesh: Mesh<Geometry<any>, Program<string>>;
         program: Program<string>;
         uniforms: {} | Record<string, {
             value: any;

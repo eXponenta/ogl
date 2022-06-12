@@ -8,6 +8,8 @@ const STATE = { NONE: -1, ROTATE: 0, DOLLY: 1, PAN: 2, DOLLY_PAN: 3 };
 const tempVec3 = new Vec3();
 const tempVec2a = new Vec2();
 const tempVec2b = new Vec2();
+// TODO
+// Move to es6 class
 export function Orbit(object, { element = document, enabled = true, target = new Vec3(), ease = 0.25, inertia = 0.85, enableRotate = true, rotateSpeed = 0.1, autoRotate = false, autoRotateSpeed = 1.0, enableZoom = true, zoomSpeed = 1, zoomStyle = 'dolly', enablePan = true, panSpeed = 0.1, minPolarAngle = 0, maxPolarAngle = Math.PI, minAzimuthAngle = -Infinity, maxAzimuthAngle = Infinity, minDistance = 0, maxDistance = Infinity, } = {}) {
     this.enabled = enabled;
     this.target = target;

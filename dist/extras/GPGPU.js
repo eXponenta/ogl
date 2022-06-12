@@ -6,11 +6,11 @@ import { Triangle } from './Triangle.js';
 export class GPGPU {
     constructor(gl, { 
     // Always pass in array of vec4s (RGBA values within texture)
-    data = new Float32Array(16), geometry = new Triangle(gl), type, // Pass in gl.FLOAT to force it, defaults to gl.HALF_FLOAT
+    data = new Float32Array(16), geometry = new Triangle(gl), type = gl.HALF_FLOAT, // Pass in gl.FLOAT to force it, defaults to gl.HALF_FLOAT
      }) {
+        this.passes = [];
         this.gl = gl;
         const initialData = data;
-        this.passes = [];
         this.geometry = geometry;
         this.dataLength = initialData.length / 4;
         // Windows and iOS only like power of 2 textures
@@ -51,11 +51,12 @@ export class GPGPU {
                 flipY: false,
             }),
         };
+        type = type || gl.HALF_FLOAT || gl.renderer.extensions['OES_texture_half_float'].HALF_FLOAT_OES;
         // Create FBOs
         const options = {
             width: this.size,
             height: this.size,
-            type: type || gl.HALF_FLOAT || gl.renderer.extensions['OES_texture_half_float'].HALF_FLOAT_OES,
+            type: type,
             format: gl.RGBA,
             internalFormat: gl.renderer.isWebgl2 ? (type === gl.FLOAT ? gl.RGBA32F : gl.RGBA16F) : gl.RGBA,
             minFilter: gl.NEAREST,

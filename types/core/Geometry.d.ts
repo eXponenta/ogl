@@ -19,6 +19,7 @@ export interface IGeometryAttribute {
     needsUpdate: boolean;
     buffer: WebGLBuffer;
 }
+export declare type IGeometryAttributeInit = Partial<IGeometryAttribute>;
 export interface IGeometryBounds {
     min: Vec3;
     max: Vec3;
@@ -26,10 +27,11 @@ export interface IGeometryBounds {
     scale: Vec3;
     radius: number;
 }
-export declare class Geometry implements IDisposable {
+declare type TDefaultAttributes = 'index' | 'position';
+export declare class Geometry<T extends string = any> implements IDisposable {
     readonly id: number;
     readonly gl: GLContext;
-    readonly attributes: Record<string, IGeometryAttribute>;
+    readonly attributes: Record<T | TDefaultAttributes, IGeometryAttribute>;
     readonly VAOs: Record<string, WebGLVertexArrayObject>;
     readonly drawRange: {
         start: number;
@@ -40,14 +42,14 @@ export declare class Geometry implements IDisposable {
     isInstanced: boolean;
     bounds: IGeometryBounds;
     raycast: string;
-    constructor(gl: GLContext, attributes?: {});
-    addAttribute(key: string, attr: Partial<IGeometryAttribute>): number;
-    updateAttribute(attr: Partial<IGeometryAttribute>): void;
+    constructor(gl: GLContext, attributes?: Partial<Record<T, IGeometryAttributeInit>>);
+    addAttribute(key: T | TDefaultAttributes, attr: IGeometryAttributeInit): number;
+    updateAttribute(attr: IGeometryAttributeInit): void;
     setIndex(value: Partial<IGeometryAttribute>): void;
     setDrawRange(start: number, count: number): void;
-    setInstancedCount(value: any): void;
+    setInstancedCount(value: number): void;
     createVAO(program: Program): void;
-    bindAttributes(program: any): void;
+    bindAttributes(program: Program): void;
     draw({ program, mode }: {
         program: any;
         mode?: number;
@@ -58,3 +60,4 @@ export declare class Geometry implements IDisposable {
     destroy(): void;
     remove(): void;
 }
+export {};

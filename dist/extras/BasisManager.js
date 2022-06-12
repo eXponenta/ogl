@@ -2,6 +2,7 @@ let supportedFormat;
 let id = 0;
 export class BasisManager {
     constructor(workerSrc) {
+        this.queue = new Map();
         if (!supportedFormat)
             supportedFormat = this.getSupportedFormat();
         this.onMessage = this.onMessage.bind(this);
@@ -47,7 +48,7 @@ export class BasisManager {
         image.isBasis = true;
         textureResolve(image);
     }
-    parseTexture(buffer) {
+    async parseTexture(buffer) {
         id++;
         this.worker.postMessage({
             id,

@@ -30,14 +30,7 @@ export class Polyline {
             index.set([ind + 0, ind + 1, ind + 2], (ind + 0) * 3);
             index.set([ind + 2, ind + 1, ind + 3], (ind + 1) * 3);
         }
-        const geometry = (this.geometry = new Geometry(gl, Object.assign(attributes, {
-            position: { size: 3, data: this.position },
-            prev: { size: 3, data: this.prev },
-            next: { size: 3, data: this.next },
-            side: { size: 1, data: side },
-            uv: { size: 2, data: uv },
-            index: { size: 1, data: index },
-        })));
+        const geometry = (this.geometry = new Geometry(gl, attributes = Object.assign(Object.assign({}, attributes), { position: { size: 3, data: this.position }, prev: { size: 3, data: this.prev }, next: { size: 3, data: this.next }, side: { size: 1, data: side }, uv: { size: 2, data: uv }, index: { size: 1, data: index } })));
         // Populate dynamic buffers
         this.updateGeometry();
         if (!uniforms.uResolution)
@@ -125,15 +118,15 @@ const defaultVertex = /* glsl */ `
         vec4 nextPos = mvp * vec4(next, 1);
         vec4 prevPos = mvp * vec4(prev, 1);
 
-        vec2 aspect = vec2(uResolution.x / uResolution.y, 1);    
+        vec2 aspect = vec2(uResolution.x / uResolution.y, 1);
         vec2 currentScreen = current.xy / current.w * aspect;
         vec2 nextScreen = nextPos.xy / nextPos.w * aspect;
         vec2 prevScreen = prevPos.xy / prevPos.w * aspect;
-    
+
         vec2 dir1 = normalize(currentScreen - prevScreen);
         vec2 dir2 = normalize(nextScreen - currentScreen);
         vec2 dir = normalize(dir1 + dir2);
-    
+
         vec2 normal = vec2(-dir.y, dir.x);
         normal /= mix(1.0, max(0.3, dot(normal, vec2(-dir1.y, dir1.x))), uMiter);
         normal /= aspect;
@@ -142,7 +135,7 @@ const defaultVertex = /* glsl */ `
         float pixelWidth = current.w * pixelWidthRatio;
         normal *= pixelWidth * uThickness;
         current.xy -= normal * side;
-    
+
         return current;
     }
 
@@ -155,7 +148,7 @@ const defaultFragment = /* glsl */ `
     precision highp float;
 
     uniform vec3 uColor;
-    
+
     varying vec2 vUv;
 
     void main() {
