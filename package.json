@@ -1,6 +1,6 @@
 {
     "name": "ogl-extend",
-    "version": "0.1.2-a",
+    "version": "0.1.3-a",
     "description": "WebGL Library based on Ogl",
     "module": "dist/index.mjs",
     "types": "types/index.d.ts",
