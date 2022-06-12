@@ -1,12 +1,12 @@
 import { Program } from './Program.js';
 import { Transform } from './Transform.js';
-import { GLContext, IDrawable } from './Renderer.js';
+import type { GLContext, IDrawable, Renderer } from './Renderer.js';
 import { Geometry } from './Geometry.js';
 
 import { Mat3 } from '../math/Mat3.js';
 import { Mat4 } from '../math/Mat4.js';
 import { nextUUID } from './uuid.js';
-import { Camera } from './Camera.js';
+import type { Camera } from './Camera.js';
 
 export interface IMeshInit<G extends Geometry = Geometry, P extends Program = Program> {
     geometry: G;
@@ -32,6 +32,8 @@ export class Mesh<G extends Geometry = Geometry, P extends Program = Program> ex
 
     private beforeRenderCallbacks: Array<IRenderCallback> = [];
     private afterRenderCallbacks: Array<IRenderCallback> = [];
+
+    activeContext: Renderer;
 
     constructor(gl: GLContext, {
         geometry,
@@ -65,12 +67,10 @@ export class Mesh<G extends Geometry = Geometry, P extends Program = Program> ex
         return this;
     }
 
-    preDraw() {
+    prepare ({ context, camera } : { camera: Camera, context: Renderer }): void {
+        this.program.prepare({ context });
+        this.geometry.prepare({ context, program: this.program });
 
-    }
-
-    draw({ camera }: { camera?: Camera } = {}) {
-        this.beforeRenderCallbacks.forEach((f) => f && f({ mesh: this, camera }));
         if (camera) {
             // Add empty matrix uniforms to program if unset
             if (!this.program.uniforms.modelMatrix) {
@@ -94,11 +94,21 @@ export class Mesh<G extends Geometry = Geometry, P extends Program = Program> ex
             this.program.uniforms.modelViewMatrix.value = this.modelViewMatrix;
             this.program.uniforms.normalMatrix.value = this.normalMatrix;
         }
+    }
+
+    draw({ camera, context } : { camera: Camera, context: Renderer }) {
+        this.beforeRenderCallbacks.forEach((f) => f && f({ mesh: this, camera }));
 
         // determine if faces need to be flipped - when mesh scaled negatively
         let flipFaces = this.program.cullFace && this.worldMatrix.determinant() < 0;
-        this.program.use({ flipFaces });
-        this.geometry.draw({ mode: this.mode, program: this.program });
+
+        this.program.use({ flipFaces, context });
+        this.geometry.draw({ mode: this.mode, program: this.program, context });
+
         this.afterRenderCallbacks.forEach((f) => f && f({ mesh: this, camera }));
+    }
+
+    destroy(): void {
+        //
     }
 }

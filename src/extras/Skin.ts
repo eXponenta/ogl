@@ -4,9 +4,10 @@ import { Mat4 } from '../math/Mat4.js';
 import { Texture } from '../core/Texture.js';
 import { Animation } from './Animation.js';
 import type { IAnimData } from './Animation.js';
-import type { GLContext } from '../core/Renderer.js';
+import type { GLContext, Renderer } from '../core/Renderer.js';
 import type { Geometry } from '../core/Geometry.js';
 import type { Program } from '../core/Program.js';
+import { Camera } from '../core/Camera.js';
 
 const tempMat4 = new Mat4();
 
@@ -131,7 +132,7 @@ export class Skin extends Mesh<any, Program<'boneTexture' | 'boneTextureSize'>> 
         });
     }
 
-    draw({ camera = null } = {}) {
+    prepare(args:{ camera: Camera; context: Renderer; }): void {
         // Update world matrices manually, as not part of scene graph
         this.root.updateMatrixWorld(true);
 
@@ -143,6 +144,6 @@ export class Skin extends Mesh<any, Program<'boneTexture' | 'boneTextureSize'>> 
         });
         if (this.boneTexture) this.boneTexture.needsUpdate = true;
 
-        super.draw({ camera });
+        super.prepare(args);
     }
 }

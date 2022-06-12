@@ -5,6 +5,7 @@ import { RenderState } from './State.js';
 import { nextUUID } from './uuid.js';
 
 import { Vec3 } from '../math/Vec3.js';
+import { IDisposable } from './IDisposable.js';
 
 // TODO: Handle context loss https://www.khronos.org/webgl/wiki/HandlingContextLost
 
@@ -18,6 +19,15 @@ import { Vec3 } from '../math/Vec3.js';
 
 const tempVec3 = new Vec3();
 
+export interface INativeObjectHolder extends IDisposable {
+    activeContext: Renderer;
+
+    /**
+     * Called when object is used for specific render process
+     */
+    prepare (args: { context: Renderer, camera: Camera }): void;
+}
+
 export interface ISortable {
     id: number;
     zDepth: number;
@@ -27,7 +37,7 @@ export interface ISortable {
     }
 }
 
-type ISortedTraversable = Transform & ISortable;
+type ISortedTraversable = Transform & ISortable & INativeObjectHolder;
 
 export interface IDrawable extends ISortedTraversable {
     program: {
@@ -35,7 +45,8 @@ export interface IDrawable extends ISortedTraversable {
         transparent: boolean;
         depthTest: boolean;
     }
-    draw (...args: any[]): void;
+
+    draw (args: { camera: Camera, context: Renderer }): void;
 }
 
 export interface IRendererInit {
@@ -66,6 +77,9 @@ export interface IRenderOptions {
 }
 
 export type GLContext = (WebGL2RenderingContext | WebGLRenderingContext) & { renderer?: Renderer };
+
+// sorry SSR =)
+export const GL_ENUMS = (self.WebGL2RenderingContext || WebGLRenderingContext).prototype;
 
 export class Renderer {
     public dpr: number;
@@ -239,6 +253,17 @@ export class Renderer {
     deleteBuffer(buffer: WebGLBuffer) {
         if (this.state.boundBuffer === buffer) this.state.boundBuffer = null;
         this.gl.deleteBuffer(buffer);
+    }
+
+    /**
+     * Guarded version for bindTexture
+     */
+
+    bindTexture(target: GLenum, texture: WebGLTexture) {
+        if (this.state.textureUnits[this.state.activeTextureUnit] === texture) return;
+
+        this.state.textureUnits[this.state.activeTextureUnit] = texture;
+        this.gl.bindTexture(target, texture);
     }
 
     setSize(width: number, height: number) {
@@ -487,8 +512,16 @@ export class Renderer {
         // Get render list - entails culling and sorting
         const renderList = this.getRenderList({ scene, camera, frustumCull, sort });
 
+        const props = { camera, context: this };
+
+        // first pass - prepare
         renderList.forEach((node) => {
-            node.draw({ camera });
+            node.prepare(props);
+        })
+
+        // second - render
+        renderList.forEach((node) => {
+            node.draw(props);
         });
     }
 }

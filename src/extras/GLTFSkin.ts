@@ -1,10 +1,11 @@
 import { Mesh } from '../core/Mesh.js';
 import { Mat4 } from '../math/Mat4.js';
 import { Texture } from '../core/Texture.js';
-import type { GLContext } from '../core/Renderer.js';
+import type { GLContext, Renderer } from '../core/Renderer.js';
 import type { Geometry } from '../core/Geometry.js';
 import type { Program } from '../core/Program.js';
 import type { GLTFAnimation } from './GLTFAnimation.js';
+import { Camera } from '../core/Camera.js';
 
 const tempMat4 = new Mat4();
 const identity = new Mat4();
@@ -81,25 +82,29 @@ export class GLTFSkin extends Mesh {
             tempMat4.multiply(bone.worldMatrix, bone.bindInverse);
             this.boneMatrices.set(tempMat4, i * 16);
         });
+
         if (this.boneTexture) this.boneTexture.needsUpdate = true;
     }
 
-    draw({ camera = null } = {}) {
+    prepare(args: { camera: Camera; context: Renderer; }): void {
         if (!this.program.uniforms.boneTexture) {
             Object.assign(this.program.uniforms, {
                 boneTexture: { value: this.boneTexture },
                 boneTextureSize: { value: this.boneTextureSize },
             });
         }
-
         this.updateUniforms();
 
+        super.prepare(args);
+    }
+
+    draw({ camera = null, context }) {
         // Switch the world matrix with identity to ignore any transforms
         // on the mesh itself - only use skeleton's transforms
         const _worldMatrix = this.worldMatrix;
         this.worldMatrix = identity;
 
-        super.draw({ camera });
+        super.draw({ camera, context });
 
         // Switch back to leave identity untouched
         this.worldMatrix = _worldMatrix;

@@ -2,10 +2,10 @@
 // TODO: upload identity matrix if null ?
 // TODO: sampler Cube
 
-import type { IDisposable } from "./IDisposable";
 import { IProgramSource, ProgramData } from "./ProgramData.js";
-import { GLContext } from "./Renderer.js";
+import { GLContext, GL_ENUMS, INativeObjectHolder, Renderer } from "./Renderer.js";
 import { IBlendEquationState, IBlendFuncState } from "./State.js";
+import { Texture } from "./Texture.js";
 import { nextUUID } from "./uuid.js";
 
 // cache of typed arrays used to flatten uniform arrays
@@ -27,12 +27,20 @@ export interface IProgramInit<U extends string = ''> extends IProgramSource {
     depthFunc: GLenum;
 }
 
-export class Program<U extends string = any> implements IDisposable {
+export class Program<U extends string = any> implements INativeObjectHolder {
     public readonly id: number;
+    /**
+     * @deprecated GLInstance not stored now
+     */
     public readonly gl: GLContext;
     public readonly uniforms: Record<U | IDefaultUniforms, IUniformData>;
 
     public programData: ProgramData;
+    public programSource: {
+        vertex: string;
+        fragment: string;
+    }
+
     public transparent: boolean;
     public cullFace: GLenum;
     public frontFace: GLenum;
@@ -43,6 +51,8 @@ export class Program<U extends string = any> implements IDisposable {
     private blendFunc: IBlendFuncState;
     private blendEquation: IBlendEquationState;
 
+    activeContext: Renderer;
+
     constructor(
         gl: GLContext,
         {
@@ -51,15 +61,13 @@ export class Program<U extends string = any> implements IDisposable {
             uniforms = {} as any,
 
             transparent = false,
-            cullFace = gl.BACK,
-            frontFace = gl.CCW,
+            cullFace = GL_ENUMS.BACK,
+            frontFace = GL_ENUMS.CCW,
             depthTest = true,
             depthWrite = true,
-            depthFunc = gl.LESS,
+            depthFunc = GL_ENUMS.LESS,
         }: Partial<IProgramInit<U>> = {}
     ) {
-        if (!gl.canvas) console.error('gl not passed as fist argument to Program');
-        this.gl = gl;
         this.uniforms = uniforms as Record<U | IDefaultUniforms, IUniformData>;
         this.id = nextUUID();
 
@@ -75,14 +83,7 @@ export class Program<U extends string = any> implements IDisposable {
         this.depthFunc = depthFunc;
         this.blendFunc = {} as any;
         this.blendEquation = {} as any;
-
-        // set default blendFunc if transparent flagged
-        if (this.transparent && !this.blendFunc.src) {
-            if (this.gl.renderer.premultipliedAlpha) this.setBlendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
-            else this.setBlendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
-        }
-
-        this.programData = ProgramData.create(gl, { vertex, fragment });
+        this.programSource = { vertex, fragment };
     }
 
     /**
@@ -128,34 +129,56 @@ export class Program<U extends string = any> implements IDisposable {
         this.blendEquation.modeAlpha = modeAlpha;
     }
 
-    applyState() {
-        if (this.depthTest) this.gl.renderer.enable(this.gl.DEPTH_TEST);
-        else this.gl.renderer.disable(this.gl.DEPTH_TEST);
+    applyState(renderer: Renderer) {
+        if (this.depthTest) renderer.enable(GL_ENUMS.DEPTH_TEST);
+        else renderer.disable(GL_ENUMS.DEPTH_TEST);
 
-        if (this.cullFace) this.gl.renderer.enable(this.gl.CULL_FACE);
-        else this.gl.renderer.disable(this.gl.CULL_FACE);
+        if (this.cullFace) renderer.enable(GL_ENUMS.CULL_FACE);
+        else renderer.disable(GL_ENUMS.CULL_FACE);
 
-        if (this.blendFunc.src) this.gl.renderer.enable(this.gl.BLEND);
-        else this.gl.renderer.disable(this.gl.BLEND);
+        if (this.blendFunc.src) renderer.enable(GL_ENUMS.BLEND);
+        else renderer.disable(GL_ENUMS.BLEND);
 
-        if (this.cullFace) this.gl.renderer.setCullFace(this.cullFace);
-        this.gl.renderer.setFrontFace(this.frontFace);
-        this.gl.renderer.setDepthMask(this.depthWrite);
-        this.gl.renderer.setDepthFunc(this.depthFunc);
+        if (this.cullFace) renderer.setCullFace(this.cullFace);
+        renderer.setFrontFace(this.frontFace);
+        renderer.setDepthMask(this.depthWrite);
+        renderer.setDepthFunc(this.depthFunc);
 
-        // TODO fix BUG
-        if (this.blendFunc.src)
-            this.gl.renderer.setBlendFunc(this.blendFunc.src, this.blendFunc.dst, this.blendFunc.srcAlpha, this.blendFunc.dstAlpha);
-        this.gl.renderer.setBlendEquation(this.blendEquation.modeRGB, this.blendEquation.modeAlpha);
+        renderer.setBlendFunc(this.blendFunc.src, this.blendFunc.dst, this.blendFunc.srcAlpha, this.blendFunc.dstAlpha);
+        renderer.setBlendEquation(this.blendEquation.modeRGB, this.blendEquation.modeAlpha);
     }
 
-    use({ flipFaces = false } = {}) {
+    prepare ({ context }): void {
+        if (!this.programData || this.activeContext !== context) {
+            this.programData = ProgramData.create(context.gl, this.programSource);
+        }
+
+        const locs = this.programData.uniformLocations;
+        const uniforms = this.uniforms;
+
+        for (const { uniformName } of locs.keys()) {
+            const uniform = uniforms[uniformName] as IUniformData;
+
+            if (!uniform || !uniform.value) {
+                continue;
+            }
+
+            if (uniform.value.texture) {
+                uniform.value.prepare(context);
+            } else if (uniform.value.length && uniform.value[0].texture) {
+                for(let t of uniform.value) {
+                    t.prepare(context);
+                }
+            }
+        }
+
+        this.activeContext = context;
+    }
+
+    use({ context, flipFaces = false }:{flipFaces?: boolean, context: Renderer} ) {
         let textureUnit = -1;
 
-        /**
-         * @type {WebGL2RenderingContext}
-         */
-        const gl = this.gl;
+        const { gl } = context;
         const uniforms = this.uniforms;
         const programData = this.programData;
         const uniformLocations = this.programData.uniformLocations;
@@ -196,16 +219,16 @@ export class Program<U extends string = any> implements IDisposable {
                 textureUnit = textureUnit + 1;
 
                 // Check if texture needs to be updated
-                uniform.value.update(textureUnit);
+                (uniform.value as Texture).bind(textureUnit);
                 return setUniform(gl, activeUniform.type, location, textureUnit);
             }
 
             // For texture arrays, set uniform as an array of texture units instead of just one
             if (uniform.value.length && uniform.value[0].texture) {
                 const textureUnits = [];
-                uniform.value.forEach((value) => {
+                uniform.value.forEach((value: Texture) => {
                     textureUnit = textureUnit + 1;
-                    value.update(textureUnit);
+                    value.bind(textureUnit);
                     textureUnits.push(textureUnit);
                 });
 
@@ -215,8 +238,11 @@ export class Program<U extends string = any> implements IDisposable {
             setUniform(gl, activeUniform.type, location, uniform.value);
         });
 
-        this.applyState();
-        if (flipFaces) gl.renderer.setFrontFace(this.frontFace === gl.CCW ? gl.CW : gl.CCW);
+        this.applyState(context);
+
+        if (flipFaces) {
+            context.setFrontFace(this.frontFace === gl.CCW ? gl.CW : gl.CCW);
+        }
     }
 
     destroy(): void {
