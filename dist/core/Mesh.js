@@ -9,6 +9,7 @@ export class Mesh extends Transform {
         this.normalMatrix = new Mat3();
         this.beforeRenderCallbacks = [];
         this.afterRenderCallbacks = [];
+        this.flipFaces = false;
         if (!gl.canvas)
             console.error('gl not passed as first argument to Mesh');
         this.gl = gl;
@@ -29,10 +30,9 @@ export class Mesh extends Transform {
         this.afterRenderCallbacks.push(f);
         return this;
     }
-    preDraw() {
-    }
-    draw({ camera } = {}) {
-        this.beforeRenderCallbacks.forEach((f) => f && f({ mesh: this, camera }));
+    prepare({ context, camera }) {
+        this.program.prepare({ context });
+        this.geometry.prepare({ context, program: this.program });
         if (camera) {
             // Add empty matrix uniforms to program if unset
             if (!this.program.uniforms.modelMatrix) {
@@ -46,19 +46,30 @@ export class Mesh extends Transform {
                 });
             }
             // Set the matrix uniforms
-            this.program.uniforms.projectionMatrix.value = camera.projectionMatrix;
-            this.program.uniforms.cameraPosition.value = camera.worldPosition;
-            this.program.uniforms.viewMatrix.value = camera.viewMatrix;
             this.modelViewMatrix.multiply(camera.viewMatrix, this.worldMatrix);
             this.normalMatrix.getNormalMatrix(this.modelViewMatrix);
-            this.program.uniforms.modelMatrix.value = this.worldMatrix;
-            this.program.uniforms.modelViewMatrix.value = this.modelViewMatrix;
-            this.program.uniforms.normalMatrix.value = this.normalMatrix;
         }
         // determine if faces need to be flipped - when mesh scaled negatively
-        let flipFaces = this.program.cullFace && this.worldMatrix.determinant() < 0;
-        this.program.use({ flipFaces });
-        this.geometry.draw({ mode: this.mode, program: this.program });
+        this.flipFaces = this.program.cullFace && this.worldMatrix.determinant() < 0;
+    }
+    draw({ camera, context }) {
+        this.beforeRenderCallbacks.forEach((f) => f && f({ mesh: this, camera }));
+        // program can be shared
+        // change uniform object ref to valid
+        const uniforms = this.program.uniforms;
+        if (camera) {
+            uniforms.projectionMatrix.value = camera.projectionMatrix;
+            uniforms.cameraPosition.value = camera.worldPosition;
+            uniforms.viewMatrix.value = camera.viewMatrix;
+            uniforms.modelMatrix.value = this.worldMatrix;
+            uniforms.modelViewMatrix.value = this.modelViewMatrix;
+            uniforms.normalMatrix.value = this.normalMatrix;
+        }
+        this.program.use({ flipFaces: this.flipFaces, context });
+        this.geometry.draw({ mode: this.mode, program: this.program, context });
         this.afterRenderCallbacks.forEach((f) => f && f({ mesh: this, camera }));
+    }
+    destroy() {
+        //
     }
 }

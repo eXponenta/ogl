@@ -61,6 +61,7 @@ export declare class GLTFLoader {
     static parseMeshes(gl: any, desc: any, bufferViews: any, materials: any, skins: any): any;
     static parsePrimitives(gl: any, primitives: any, desc: any, bufferViews: any, materials: any, numInstances: any, isLightmap: any): any;
     static parseAccessor(index: any, desc: any, bufferViews: any): {
+        rawData: any;
         data: any;
         size: any;
         type: any;

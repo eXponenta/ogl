@@ -28,10 +28,10 @@ export declare class RenderState {
     unpackAlignment: number;
     framebuffer: WebGLFramebuffer;
     viewport: IViewportState;
-    textureUnits: Array<any>;
+    textureUnits: Record<number, WebGLTexture>;
     activeTextureUnit: number;
     boundBuffer: WebGLBuffer;
-    uniformLocations: Map<string, WebGLActiveInfo>;
+    uniformLocations: Map<WebGLUniformLocation, any>;
     currentProgram: WebGLProgram;
     currentVAO: WebGLVertexArrayObject;
 }

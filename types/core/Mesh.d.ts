@@ -1,8 +1,8 @@
 import { Program } from './Program.js';
 import { Transform } from './Transform.js';
-import { GLContext, IDrawable } from './Renderer.js';
+import type { GLContext, IDrawable, Renderer } from './Renderer.js';
 import { Geometry } from './Geometry.js';
-import { Camera } from './Camera.js';
+import type { Camera } from './Camera.js';
 export interface IMeshInit<G extends Geometry = Geometry, P extends Program = Program> {
     geometry: G;
     program: P;
@@ -26,11 +26,18 @@ export declare class Mesh<G extends Geometry = Geometry, P extends Program = Pro
     private normalMatrix;
     private beforeRenderCallbacks;
     private afterRenderCallbacks;
+    private flipFaces;
+    activeContext: Renderer;
     constructor(gl: GLContext, { geometry, program, mode, frustumCulled, renderOrder }: IMeshInit<G, P>);
     onBeforeRender(f: IRenderCallback): this;
     onAfterRender(f: IRenderCallback): this;
-    preDraw(): void;
-    draw({ camera }?: {
-        camera?: Camera;
+    prepare({ context, camera }: {
+        camera: Camera;
+        context: Renderer;
     }): void;
+    draw({ camera, context }: {
+        camera: Camera;
+        context: Renderer;
+    }): void;
+    destroy(): void;
 }

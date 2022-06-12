@@ -52,7 +52,7 @@ export class GLTFSkin extends Mesh {
         if (this.boneTexture)
             this.boneTexture.needsUpdate = true;
     }
-    draw({ camera = null } = {}) {
+    prepare(args) {
         if (!this.program.uniforms.boneTexture) {
             Object.assign(this.program.uniforms, {
                 boneTexture: { value: this.boneTexture },
@@ -60,11 +60,14 @@ export class GLTFSkin extends Mesh {
             });
         }
         this.updateUniforms();
+        super.prepare(args);
+    }
+    draw({ camera = null, context }) {
         // Switch the world matrix with identity to ignore any transforms
         // on the mesh itself - only use skeleton's transforms
         const _worldMatrix = this.worldMatrix;
         this.worldMatrix = identity;
-        super.draw({ camera });
+        super.draw({ camera, context });
         // Switch back to leave identity untouched
         this.worldMatrix = _worldMatrix;
     }

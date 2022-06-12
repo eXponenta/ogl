@@ -1,4 +1,4 @@
-// for constants 
+// for constants
 export const GL = self.WebGL2RenderingContext ? self.WebGL2RenderingContext.prototype : WebGLRenderingContext.prototype;
 export class RenderState {
     constructor() {
@@ -19,7 +19,7 @@ export class RenderState {
         this.unpackAlignment = 4;
         this.framebuffer = null;
         this.viewport = { x: 0, y: 0, width: null, height: null };
-        this.textureUnits = [];
+        this.textureUnits = {};
         this.activeTextureUnit = 0;
         this.boundBuffer = null;
         this.uniformLocations = new Map();

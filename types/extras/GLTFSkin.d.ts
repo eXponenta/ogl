@@ -1,8 +1,9 @@
 import { Mesh } from '../core/Mesh.js';
-import type { GLContext } from '../core/Renderer.js';
+import type { GLContext, Renderer } from '../core/Renderer.js';
 import type { Geometry } from '../core/Geometry.js';
 import type { Program } from '../core/Program.js';
 import type { GLTFAnimation } from './GLTFAnimation.js';
+import { Camera } from '../core/Camera.js';
 export interface IGLTFSkeletoneData {
     joints: Array<any>;
 }
@@ -21,7 +22,12 @@ export declare class GLTFSkin extends Mesh {
     constructor(gl: GLContext, { skeleton, geometry, program, mode }: IGLTFSkinData);
     createBoneTexture(): void;
     updateUniforms(): void;
-    draw({ camera }?: {
+    prepare(args: {
+        camera: Camera;
+        context: Renderer;
+    }): void;
+    draw({ camera, context }: {
         camera?: any;
+        context: any;
     }): void;
 }

@@ -1,13 +1,12 @@
-import type { IDisposable } from './IDisposable';
 import { Program } from './Program.js';
-import { GLContext } from './Renderer.js';
-import { RenderState } from './State.js';
+import { GLContext, INativeObjectHolder, Renderer } from './Renderer.js';
 import { Vec3 } from '../math/Vec3.js';
 export interface IGeometryAttribute {
     id: number;
     size: number;
     type: GLenum;
-    data: Uint16Array | Float32Array;
+    rawData: ArrayBuffer;
+    data: Uint16Array | Uint32Array | Float32Array;
     target: GLenum;
     usage: GLenum;
     normalized: boolean;
@@ -28,8 +27,12 @@ export interface IGeometryBounds {
     radius: number;
 }
 declare type TDefaultAttributes = 'index' | 'position';
-export declare class Geometry<T extends string = any> implements IDisposable {
+export declare class Geometry<T extends string = any> implements INativeObjectHolder {
     readonly id: number;
+    /**
+     * @deprecated
+     * Not stored internally
+     */
     readonly gl: GLContext;
     readonly attributes: Record<T | TDefaultAttributes, IGeometryAttribute>;
     readonly VAOs: Record<string, WebGLVertexArrayObject>;
@@ -37,22 +40,27 @@ export declare class Geometry<T extends string = any> implements IDisposable {
         start: number;
         count: number;
     };
-    readonly glState: RenderState;
     instancedCount: number;
     isInstanced: boolean;
     bounds: IGeometryBounds;
     raycast: string;
-    constructor(gl: GLContext, attributes?: Partial<Record<T, IGeometryAttributeInit>>);
+    activeContext: Renderer;
+    constructor(_gl: GLContext, attributes?: Partial<Record<T, IGeometryAttributeInit>>);
     addAttribute(key: T | TDefaultAttributes, attr: IGeometryAttributeInit): number;
-    updateAttribute(attr: IGeometryAttributeInit): void;
+    private updateAttribute;
     setIndex(value: Partial<IGeometryAttribute>): void;
     setDrawRange(start: number, count: number): void;
     setInstancedCount(value: number): void;
-    createVAO(program: Program): void;
-    bindAttributes(program: Program): void;
-    draw({ program, mode }: {
-        program: any;
-        mode?: number;
+    private createVAO;
+    private bindAttributes;
+    prepare({ context, program }: {
+        context: Renderer;
+        program?: Program;
+    }): void;
+    draw({ program, mode, context }: {
+        program: Program;
+        context: Renderer;
+        mode: GLenum;
     }): void;
     getPosition(): IGeometryAttribute | boolean;
     computeBoundingBox(attr?: IGeometryAttribute): void;

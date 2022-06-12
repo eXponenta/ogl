@@ -2,6 +2,17 @@ import type { Transform } from './Transform.js';
 import type { Camera } from './Camera.js';
 import type { RenderTarget } from './RenderTarget.js';
 import { RenderState } from './State.js';
+import { IDisposable } from './IDisposable.js';
+export interface INativeObjectHolder extends IDisposable {
+    activeContext: Renderer;
+    /**
+     * Called when object is used for specific render process
+     */
+    prepare(args: {
+        context: Renderer;
+        camera: Camera;
+    }): void;
+}
 export interface ISortable {
     id: number;
     zDepth: number;
@@ -10,14 +21,17 @@ export interface ISortable {
         id: number;
     };
 }
-declare type ISortedTraversable = Transform & ISortable;
+declare type ISortedTraversable = Transform & ISortable & INativeObjectHolder;
 export interface IDrawable extends ISortedTraversable {
     program: {
         id: number;
         transparent: boolean;
         depthTest: boolean;
     };
-    draw(...args: any[]): void;
+    draw(args: {
+        camera: Camera;
+        context: Renderer;
+    }): void;
 }
 export interface IRendererInit {
     canvas: HTMLCanvasElement;
@@ -46,6 +60,7 @@ export interface IRenderOptions {
 export declare type GLContext = (WebGL2RenderingContext | WebGLRenderingContext) & {
     renderer?: Renderer;
 };
+export declare const GL_ENUMS: WebGL2RenderingContext | WebGLRenderingContext;
 export declare class Renderer {
     dpr: number;
     alpha: boolean;
@@ -94,6 +109,10 @@ export declare class Renderer {
     setDepthMask(value: boolean): void;
     setDepthFunc(value: GLenum): void;
     activeTexture(value: number): void;
+    /**
+     * Guarded version for bindTexture
+     */
+    bindTexture(target: GLenum, texture: WebGLTexture, unit?: number): void;
     bindFramebuffer({ target, buffer }?: {
         target?: number;
         buffer?: any;

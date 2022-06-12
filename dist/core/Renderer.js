@@ -10,6 +10,8 @@ import { Vec3 } from '../math/Vec3.js';
 // gl.stencilOp( stencilFail, stencilZFail, stencilZPass );
 // gl.clearStencil( stencil );
 const tempVec3 = new Vec3();
+// sorry SSR =)
+export const GL_ENUMS = (self.WebGL2RenderingContext || WebGLRenderingContext).prototype;
 export class Renderer {
     constructor({ canvas = document.createElement('canvas'), width = 300, height = 150, dpr = 1, alpha = false, depth = true, stencil = false, antialias = false, premultipliedAlpha = false, preserveDrawingBuffer = false, powerPreference = 'default', autoClear = true, webgl = 2, } = {}) {
         this.width = 0;
@@ -221,6 +223,16 @@ export class Renderer {
         this.state.activeTextureUnit = value;
         this.gl.activeTexture(this.gl.TEXTURE0 + value);
     }
+    /**
+     * Guarded version for bindTexture
+     */
+    bindTexture(target, texture, unit = this.state.activeTextureUnit) {
+        if (this.state.textureUnits[unit] === texture)
+            return;
+        this.state.textureUnits[unit] = texture;
+        this.activeTexture(unit);
+        this.gl.bindTexture(target, texture);
+    }
     bindFramebuffer({ target = this.gl.FRAMEBUFFER, buffer = null } = {}) {
         if (this.state.framebuffer === buffer)
             return;
@@ -356,8 +368,14 @@ export class Renderer {
             camera.updateMatrixWorld();
         // Get render list - entails culling and sorting
         const renderList = this.getRenderList({ scene, camera, frustumCull, sort });
+        const props = { camera, context: this };
+        // first pass - prepare
         renderList.forEach((node) => {
-            node.draw({ camera });
+            node.prepare(props);
+        });
+        // second - render
+        renderList.forEach((node) => {
+            node.draw(props);
         });
     }
 }

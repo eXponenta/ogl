@@ -1,6 +1,4 @@
-import type { IDisposable } from "./IDisposable";
-import type { GLContext } from "./Renderer.js";
-import type { RenderState } from "./State.js";
+import { GLContext, INativeObjectHolder, Renderer } from "./Renderer.js";
 export interface ICompressedImageFrame {
     width: number;
     height: number;
@@ -37,9 +35,13 @@ export interface IEmptyTextureInit extends IBaseTextureInit {
     height: number;
 }
 export declare type ITextureInit<T extends IImageSource> = IRegularTextureInit<T> | IEmptyTextureInit;
-export declare class Texture<T extends IImageSource = null> implements IDisposable {
+export declare class Texture<T extends IImageSource = null> implements INativeObjectHolder {
     name?: string;
     image: T;
+    /**
+     * @deprecated
+     * GL not stored, use activeContext after prepare call
+     */
     readonly gl: GLContext;
     readonly id: number;
     readonly type: GLenum;
@@ -51,7 +53,6 @@ export declare class Texture<T extends IImageSource = null> implements IDisposab
         image: T;
     };
     readonly state: Partial<ITextureInit<T>>;
-    readonly glState: RenderState;
     wrapS: GLenum;
     wrapT: GLenum;
     generateMipmaps: boolean;
@@ -64,10 +65,28 @@ export declare class Texture<T extends IImageSource = null> implements IDisposab
     width: number;
     height: number;
     needsUpdate: boolean;
+    textureUnit: number;
     texture: WebGLTexture;
+    activeContext: Renderer;
     onUpdate?: () => void;
-    constructor(gl: GLContext, { target, type, format, internalFormat, wrapS, wrapT, generateMipmaps, minFilter, magFilter, premultiplyAlpha, unpackAlignment, flipY, anisotropy, level, ...other }?: Partial<ITextureInit<T>>);
-    bind(): void;
+    constructor(_gl: GLContext, { target, type, format, internalFormat, wrapS, wrapT, generateMipmaps, minFilter, magFilter, premultiplyAlpha, unpackAlignment, flipY, anisotropy, level, ...other }?: Partial<ITextureInit<T>>);
+    /**
+     * Attach renderer context to current texture and prepare (bind, upload) for rendering
+     * @returns
+     */
+    prepare({ context }: {
+        context: Renderer;
+    }): void;
+    /**
+     * Bind texture to slot, not prepare it. Only bind. For prepare use prepare
+     */
+    bind(textureUnit?: number): void;
+    /**
+     * @deprecated
+     * Only mark, not force upload.
+     * Use prepare for direct upload and bind for bind
+     */
     update(textureUnit?: number): void;
+    private upload;
     destroy(): void;
 }

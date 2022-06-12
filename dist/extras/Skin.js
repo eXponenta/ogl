@@ -75,7 +75,7 @@ export class Skin extends Mesh {
             animation.update(total, i === 0);
         });
     }
-    draw({ camera = null } = {}) {
+    prepare(args) {
         // Update world matrices manually, as not part of scene graph
         this.root.updateMatrixWorld(true);
         // Update bone texture
@@ -86,6 +86,6 @@ export class Skin extends Mesh {
         });
         if (this.boneTexture)
             this.boneTexture.needsUpdate = true;
-        super.draw({ camera });
+        super.prepare(args);
     }
 }

@@ -2,14 +2,12 @@
 // TODO: upload identity matrix if null ?
 // TODO: sampler Cube
 import { ProgramData } from "./ProgramData.js";
+import { GL_ENUMS } from "./Renderer.js";
 import { nextUUID } from "./uuid.js";
 // cache of typed arrays used to flatten uniform arrays
 const arrayCacheF32 = {};
 export class Program {
-    constructor(gl, { vertex, fragment, uniforms = {}, transparent = false, cullFace = gl.BACK, frontFace = gl.CCW, depthTest = true, depthWrite = true, depthFunc = gl.LESS, } = {}) {
-        if (!gl.canvas)
-            console.error('gl not passed as fist argument to Program');
-        this.gl = gl;
+    constructor(gl, { vertex, fragment, uniforms = {}, transparent = false, cullFace = GL_ENUMS.BACK, frontFace = GL_ENUMS.CCW, depthTest = true, depthWrite = true, depthFunc = GL_ENUMS.LESS, } = {}) {
         this.uniforms = uniforms;
         this.id = nextUUID();
         if (!vertex)
@@ -25,14 +23,7 @@ export class Program {
         this.depthFunc = depthFunc;
         this.blendFunc = {};
         this.blendEquation = {};
-        // set default blendFunc if transparent flagged
-        if (this.transparent && !this.blendFunc.src) {
-            if (this.gl.renderer.premultipliedAlpha)
-                this.setBlendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
-            else
-                this.setBlendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
-        }
-        this.programData = ProgramData.create(gl, { vertex, fragment });
+        this.programSource = { vertex, fragment };
     }
     /**
      * Only for backward compatibility
@@ -71,43 +62,68 @@ export class Program {
         this.blendEquation.modeRGB = modeRGB;
         this.blendEquation.modeAlpha = modeAlpha;
     }
-    applyState() {
+    applyState(renderer) {
         if (this.depthTest)
-            this.gl.renderer.enable(this.gl.DEPTH_TEST);
+            renderer.enable(GL_ENUMS.DEPTH_TEST);
         else
-            this.gl.renderer.disable(this.gl.DEPTH_TEST);
+            renderer.disable(GL_ENUMS.DEPTH_TEST);
         if (this.cullFace)
-            this.gl.renderer.enable(this.gl.CULL_FACE);
+            renderer.enable(GL_ENUMS.CULL_FACE);
         else
-            this.gl.renderer.disable(this.gl.CULL_FACE);
+            renderer.disable(GL_ENUMS.CULL_FACE);
         if (this.blendFunc.src)
-            this.gl.renderer.enable(this.gl.BLEND);
+            renderer.enable(GL_ENUMS.BLEND);
         else
-            this.gl.renderer.disable(this.gl.BLEND);
+            renderer.disable(GL_ENUMS.BLEND);
         if (this.cullFace)
-            this.gl.renderer.setCullFace(this.cullFace);
-        this.gl.renderer.setFrontFace(this.frontFace);
-        this.gl.renderer.setDepthMask(this.depthWrite);
-        this.gl.renderer.setDepthFunc(this.depthFunc);
-        // TODO fix BUG
-        if (this.blendFunc.src)
-            this.gl.renderer.setBlendFunc(this.blendFunc.src, this.blendFunc.dst, this.blendFunc.srcAlpha, this.blendFunc.dstAlpha);
-        this.gl.renderer.setBlendEquation(this.blendEquation.modeRGB, this.blendEquation.modeAlpha);
+            renderer.setCullFace(this.cullFace);
+        renderer.setFrontFace(this.frontFace);
+        renderer.setDepthMask(this.depthWrite);
+        renderer.setDepthFunc(this.depthFunc);
+        if (this.transparent) {
+            renderer.setBlendFunc(this.blendFunc.src, this.blendFunc.dst, this.blendFunc.srcAlpha, this.blendFunc.dstAlpha);
+        }
+        renderer.setBlendEquation(this.blendEquation.modeRGB, this.blendEquation.modeAlpha);
     }
-    use({ flipFaces = false } = {}) {
+    prepare({ context }) {
+        if (!this.programData || this.activeContext !== context) {
+            this.programData = ProgramData.create(context.gl, this.programSource);
+        }
+        const locs = this.programData.uniformLocations;
+        const uniforms = this.uniforms;
+        for (const { uniformName } of locs.keys()) {
+            const uniform = uniforms[uniformName];
+            if (!uniform || !uniform.value) {
+                continue;
+            }
+            if (uniform.value.prepare) {
+                uniform.value.prepare({ context });
+            }
+            else if (uniform.value.length && uniform.value[0].prepare) {
+                for (let t of uniform.value) {
+                    t.prepare({ context });
+                }
+            }
+        }
+        if (this.blendFunc.src == null) {
+            if (context.premultipliedAlpha)
+                this.setBlendFunc(GL_ENUMS.ONE, GL_ENUMS.ONE_MINUS_SRC_ALPHA);
+            else
+                this.setBlendFunc(GL_ENUMS.SRC_ALPHA, GL_ENUMS.ONE_MINUS_SRC_ALPHA);
+        }
+        this.activeContext = context;
+    }
+    use({ context, flipFaces = false }) {
         let textureUnit = -1;
-        /**
-         * @type {WebGL2RenderingContext}
-         */
-        const gl = this.gl;
+        const { gl } = context;
         const uniforms = this.uniforms;
         const programData = this.programData;
         const uniformLocations = this.programData.uniformLocations;
-        const programActive = gl.renderer.state.currentProgram === programData.id;
+        const programActive = context.state.currentProgram === programData.id;
         // Avoid gl call if program already in use
         if (!programActive) {
             gl.useProgram(programData.program);
-            gl.renderer.state.currentProgram = programData.id;
+            context.state.currentProgram = programData.id;
         }
         // Set only the active uniforms found in the shader
         uniformLocations.forEach((location, activeUniform) => {
@@ -132,24 +148,25 @@ export class Program {
             if (uniform.value.texture) {
                 textureUnit = textureUnit + 1;
                 // Check if texture needs to be updated
-                uniform.value.update(textureUnit);
-                return setUniform(gl, activeUniform.type, location, textureUnit);
+                uniform.value.bind(textureUnit);
+                return setUniform(context, activeUniform.type, location, textureUnit);
             }
             // For texture arrays, set uniform as an array of texture units instead of just one
             if (uniform.value.length && uniform.value[0].texture) {
                 const textureUnits = [];
                 uniform.value.forEach((value) => {
                     textureUnit = textureUnit + 1;
-                    value.update(textureUnit);
+                    value.bind(textureUnit);
                     textureUnits.push(textureUnit);
                 });
-                return setUniform(gl, activeUniform.type, location, textureUnits);
+                return setUniform(context, activeUniform.type, location, textureUnits);
             }
-            setUniform(gl, activeUniform.type, location, uniform.value);
+            setUniform(context, activeUniform.type, location, uniform.value);
         });
-        this.applyState();
-        if (flipFaces)
-            gl.renderer.setFrontFace(this.frontFace === gl.CCW ? gl.CW : gl.CCW);
+        this.applyState(context);
+        if (flipFaces) {
+            context.setFrontFace(this.frontFace === gl.CCW ? gl.CW : gl.CCW);
+        }
     }
     destroy() {
         this.remove();
@@ -159,27 +176,28 @@ export class Program {
         this.programData = null;
     }
 }
-function setUniform(gl, type, location, value) {
+function setUniform(context, type, location, value) {
     value = value.length ? flatten(value) : value;
-    const setValue = gl.renderer.state.uniformLocations.get(location);
+    const setValue = context.state.uniformLocations.get(location);
+    const gl = context.gl;
     // Avoid redundant uniform commands
     if (value.length) {
         if (setValue === undefined || setValue.length !== value.length) {
             // clone array to store as cache
-            gl.renderer.state.uniformLocations.set(location, value.slice(0));
+            context.state.uniformLocations.set(location, value.slice(0));
         }
         else {
             if (arraysEqual(setValue, value))
                 return;
             // Update cached array values
             setValue.set ? setValue.set(value) : setArray(setValue, value);
-            gl.renderer.state.uniformLocations.set(location, setValue);
+            context.state.uniformLocations.set(location, setValue);
         }
     }
     else {
         if (setValue === value)
             return;
-        gl.renderer.state.uniformLocations.set(location, value);
+        context.state.uniformLocations.set(location, value);
     }
     switch (type) {
         case 5126:

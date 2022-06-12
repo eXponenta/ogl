@@ -1,6 +1,5 @@
-import type { IDisposable } from "./IDisposable";
 import { IProgramSource, ProgramData } from "./ProgramData.js";
-import { GLContext } from "./Renderer.js";
+import { GLContext, INativeObjectHolder, Renderer } from "./Renderer.js";
 export interface IUniformData<T = any> {
     value: T;
 }
@@ -14,11 +13,18 @@ export interface IProgramInit<U extends string = ''> extends IProgramSource {
     depthWrite: boolean;
     depthFunc: GLenum;
 }
-export declare class Program<U extends string = any> implements IDisposable {
+export declare class Program<U extends string = any> implements INativeObjectHolder {
     readonly id: number;
+    /**
+     * @deprecated GLInstance not stored now
+     */
     readonly gl: GLContext;
     readonly uniforms: Record<U | IDefaultUniforms, IUniformData>;
     programData: ProgramData;
+    programSource: {
+        vertex: string;
+        fragment: string;
+    };
     transparent: boolean;
     cullFace: GLenum;
     frontFace: GLenum;
@@ -27,6 +33,7 @@ export declare class Program<U extends string = any> implements IDisposable {
     depthFunc: GLenum;
     private blendFunc;
     private blendEquation;
+    activeContext: Renderer;
     constructor(gl: GLContext, { vertex, fragment, uniforms, transparent, cullFace, frontFace, depthTest, depthWrite, depthFunc, }?: Partial<IProgramInit<U>>);
     /**
      * Only for backward compatibility
@@ -43,9 +50,13 @@ export declare class Program<U extends string = any> implements IDisposable {
     get program(): WebGLProgram;
     setBlendFunc(src: GLenum, dst: GLenum, srcAlpha?: GLenum, dstAlpha?: GLenum): void;
     setBlendEquation(modeRGB: GLenum, modeAlpha?: GLenum): void;
-    applyState(): void;
-    use({ flipFaces }?: {
+    applyState(renderer: Renderer): void;
+    prepare({ context }: {
+        context: any;
+    }): void;
+    use({ context, flipFaces }: {
         flipFaces?: boolean;
+        context: Renderer;
     }): void;
     destroy(): void;
     remove(): void;
