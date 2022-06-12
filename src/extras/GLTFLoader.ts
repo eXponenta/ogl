@@ -31,6 +31,9 @@ import type { Program } from '../core/Program.js';
 // TODO: morph target animations
 // TODO: option to turn off GPU instancing
 
+// BAD SUPPORT
+// REMOVE gl.createBuffer on line 290!!
+
 const TYPE_ARRAY = {
     5121: Uint8Array,
     5122: Int16Array,
@@ -285,14 +288,14 @@ export class GLTFLoader {
                 i
             ) => {
                 bufferViews[i].data = buffers[bufferIndex].slice(byteOffset, byteOffset + byteLength);
-
                 if (!isAttribute) return;
                 // Create gl buffers for the bufferView, pushing it to the GPU
-                const buffer = gl.createBuffer();
-                gl.bindBuffer(target, buffer);
-                gl.renderer.state.boundBuffer = buffer;
-                gl.bufferData(target, bufferViews[i].data, gl.STATIC_DRAW);
-                bufferViews[i].buffer = buffer;
+                // const buffer = gl.createBuffer();
+                // gl.renderer.bindBuffer(target, buffer);
+                // gl.bufferData(target, bufferViews[i].data, gl.STATIC_DRAW);
+
+                // because by default is index;
+                bufferViews[i].buffer = null;//buffer;
             }
         );
 
@@ -641,6 +644,7 @@ export class GLTFLoader {
 
         // Return attribute data
         return {
+            rawData: data,
             data: newData,
             size,
             type: componentType,
