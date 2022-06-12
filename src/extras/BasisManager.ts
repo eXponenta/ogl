@@ -2,7 +2,10 @@ let supportedFormat;
 let id = 0;
 
 export class BasisManager {
-    constructor(workerSrc) {
+    private readonly queue = new Map();
+    private worker: Worker;
+
+    constructor(workerSrc: string) {
         if (!supportedFormat) supportedFormat = this.getSupportedFormat();
         this.onMessage = this.onMessage.bind(this);
         this.queue = new Map();
@@ -30,12 +33,12 @@ export class BasisManager {
         return 'none';
     }
 
-    initWorker(workerSrc) {
+    initWorker(workerSrc: string) {
         this.worker = new Worker(workerSrc);
         this.worker.onmessage = this.onMessage;
     }
 
-    onMessage({ data }) {
+    onMessage({ data }: MessageEvent<{ id: number, error: string, image: any }>) {
         const { id, error, image } = data;
         if (error) {
             console.log(error, id);
@@ -47,14 +50,14 @@ export class BasisManager {
         textureResolve(image);
     }
 
-    parseTexture(buffer) {
+    async parseTexture(buffer: ArrayBuffer): Promise<any> {
         id++;
         this.worker.postMessage({
             id,
             buffer,
             supportedFormat,
         });
-        let textureResolve;
+        let textureResolve: (image: any) => void;
         const promise = new Promise((res) => (textureResolve = res));
         this.queue.set(id, textureResolve);
         return promise;

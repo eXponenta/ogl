@@ -48,6 +48,8 @@ export interface IGeometryAttribute {
     buffer: WebGLBuffer;
 }
 
+export type IGeometryAttributeInit = Partial<IGeometryAttribute>;
+
 export interface IGeometryBounds {
     min: Vec3;
     max: Vec3;
@@ -56,10 +58,12 @@ export interface IGeometryBounds {
     radius: number;
 }
 
-export class Geometry implements IDisposable {
+type TDefaultAttributes = 'index' | 'position';
+
+export class Geometry<T extends string = any> implements IDisposable {
     public readonly id: number;
     public readonly gl: GLContext;
-    public readonly attributes: Record<string, IGeometryAttribute>;
+    public readonly attributes: Record<T | TDefaultAttributes, IGeometryAttribute>;
     public readonly VAOs: Record<string, WebGLVertexArrayObject> = {};
     public readonly drawRange = { start: 0, count: 0 };
     public readonly glState: RenderState;
@@ -71,10 +75,10 @@ export class Geometry implements IDisposable {
     // hacky way to did raycast of sphere
     public raycast: string;
 
-    constructor(gl: GLContext, attributes = {}) {
+    constructor(gl: GLContext, attributes: Partial<Record<T, IGeometryAttributeInit >> = {}) {
         if (!gl.canvas) console.error('gl not passed as first argument to Geometry');
         this.gl = gl;
-        this.attributes = attributes;
+        this.attributes = attributes as Record<T | TDefaultAttributes, IGeometryAttribute>;
         this.id = nextUUID();
 
         this.instancedCount = 0;
@@ -91,7 +95,7 @@ export class Geometry implements IDisposable {
         }
     }
 
-    addAttribute(key: string, attr: Partial<IGeometryAttribute>) {
+    addAttribute(key: T | TDefaultAttributes, attr: IGeometryAttributeInit) {
         this.attributes[key] = attr as IGeometryAttribute;
 
         // Set options
@@ -133,7 +137,7 @@ export class Geometry implements IDisposable {
         }
     }
 
-    updateAttribute(attr: Partial<IGeometryAttribute>) {
+    updateAttribute(attr: IGeometryAttributeInit) {
         const isNewBuffer = !attr.buffer;
         if (isNewBuffer) attr.buffer = this.gl.createBuffer();
 
@@ -156,7 +160,7 @@ export class Geometry implements IDisposable {
         this.drawRange.count = count;
     }
 
-    setInstancedCount(value) {
+    setInstancedCount(value: number) {
         this.instancedCount = value;
     }
 
@@ -166,7 +170,7 @@ export class Geometry implements IDisposable {
         this.bindAttributes(program);
     }
 
-    bindAttributes(program: any) {
+    bindAttributes(program: Program) {
         // Link all attributes to program using gl.vertexAttribPointer
         program.attributeLocations.forEach((location, { name, type }) => {
             // If geometry missing a required shader attribute

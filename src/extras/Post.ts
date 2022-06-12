@@ -53,11 +53,11 @@ export class Post {
     };
     public readonly geometry: Geometry;
     public readonly targetOnly: boolean;
+    public readonly passes: IRenderPass[] = [];
 
     public width: number;
     public height: number;
     public dpr: number;
-    public passes: IRenderPass[];
 
     private uniform: { value: any } = { value: null };
     private fbo: ISwapChain;

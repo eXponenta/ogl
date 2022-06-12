@@ -1,22 +1,51 @@
-import { Geometry } from '../core/Geometry.js';
-import { Program } from '../core/Program.js';
+import { Geometry, IGeometryAttribute, IGeometryAttributeInit } from '../core/Geometry.js';
+import { IDefaultUniforms, IUniformData, Program } from '../core/Program.js';
 import { Mesh } from '../core/Mesh.js';
 import { Vec2 } from '../math/Vec2.js';
 import { Vec3 } from '../math/Vec3.js';
 import { Color } from '../math/Color.js';
+import type { GLContext } from '../core/Renderer.js';
 
 const tmp = new Vec3();
 
+type TDefaultUniforms = 'uResolution' | 'uDPR' | 'uThickness' | 'uColor' | 'uMiter';
+
+export interface IPolylineInit {
+    points: Array<Vec3>;
+    vertex?: string;
+    fragment?: string;
+    uniforms?: Partial<Record<string | TDefaultUniforms, IUniformData>>;
+    attributes?: Record<string, IGeometryAttributeInit>;
+}
+
 export class Polyline {
+    public readonly gl: GLContext;
+    private points: Array<Vec3>;
+    private count: number;
+    private geometry: Geometry;
+
+    private position: Float32Array;
+    private prev: Float32Array;
+    private next: Float32Array;
+
+    private resolution: IUniformData<Vec2>;
+    private dpr: IUniformData<number>;
+    private thickness: IUniformData<number>;
+    private color: IUniformData<Color>;
+    private miter: IUniformData<number>;
+
+    private program: Program<IDefaultUniforms>;
+    private mesh: Mesh;
+
     constructor(
-        gl,
+        gl: GLContext,
         {
             points, // Array of Vec3s
             vertex = defaultVertex,
             fragment = defaultFragment,
             uniforms = {},
             attributes = {}, // For passing in custom attribs
-        }
+        }: IPolylineInit
     ) {
         this.gl = gl;
         this.points = points;
@@ -44,7 +73,8 @@ export class Polyline {
 
         const geometry = (this.geometry = new Geometry(
             gl,
-            Object.assign(attributes, {
+            attributes = {
+                ...attributes,
                 position: { size: 3, data: this.position },
                 prev: { size: 3, data: this.prev },
                 next: { size: 3, data: this.next },
@@ -52,7 +82,7 @@ export class Polyline {
                 uv: { size: 2, data: uv },
                 index: { size: 1, data: index },
             })
-        ));
+        );
 
         // Populate dynamic buffers
         this.updateGeometry();
@@ -142,15 +172,15 @@ const defaultVertex = /* glsl */ `
         vec4 nextPos = mvp * vec4(next, 1);
         vec4 prevPos = mvp * vec4(prev, 1);
 
-        vec2 aspect = vec2(uResolution.x / uResolution.y, 1);    
+        vec2 aspect = vec2(uResolution.x / uResolution.y, 1);
         vec2 currentScreen = current.xy / current.w * aspect;
         vec2 nextScreen = nextPos.xy / nextPos.w * aspect;
         vec2 prevScreen = prevPos.xy / prevPos.w * aspect;
-    
+
         vec2 dir1 = normalize(currentScreen - prevScreen);
         vec2 dir2 = normalize(nextScreen - currentScreen);
         vec2 dir = normalize(dir1 + dir2);
-    
+
         vec2 normal = vec2(-dir.y, dir.x);
         normal /= mix(1.0, max(0.3, dot(normal, vec2(-dir1.y, dir1.x))), uMiter);
         normal /= aspect;
@@ -159,7 +189,7 @@ const defaultVertex = /* glsl */ `
         float pixelWidth = current.w * pixelWidthRatio;
         normal *= pixelWidth * uThickness;
         current.xy -= normal * side;
-    
+
         return current;
     }
 
@@ -173,7 +203,7 @@ const defaultFragment = /* glsl */ `
     precision highp float;
 
     uniform vec3 uColor;
-    
+
     varying vec2 vUv;
 
     void main() {
