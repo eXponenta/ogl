@@ -1,12 +1,15 @@
 import { Geometry } from '../core/Geometry.js';
 import { Transform } from '../core/Transform.js';
-import { Texture } from '../core/Texture.js';
+import { IRegularTextureInit, Texture } from '../core/Texture.js';
 import { Mesh } from '../core/Mesh.js';
 import { GLTFAnimation } from './GLTFAnimation.js';
 import { GLTFSkin } from './GLTFSkin.js';
 import { Mat4 } from '../math/Mat4.js';
 import { Vec3 } from '../math/Vec3.js';
 import { NormalProgram } from './NormalProgram.js';
+import type { BasisManager } from './BasisManager.js'
+import type { GLContext } from '../core/Renderer.js';
+import type { Program } from '../core/Program.js';
 
 // Supports
 // [x] glb
@@ -65,12 +68,19 @@ const TRANSFORMS = {
     scale: 'scale',
 };
 
+/**
+ * TODO: Restrict types!!!
+ */
 export class GLTFLoader {
-    static setBasisManager(manager) {
+    // WTF????
+    static minFilter: GLenum;
+    static basisManager: BasisManager;
+
+    static setBasisManager(manager: BasisManager) {
         this.basisManager = manager;
     }
 
-    static async load(gl, src) {
+    static async load(gl: GLContext, src: string) {
         const dir = src.split('/').slice(0, -1).join('/') + '/';
 
         // load main description json
@@ -79,7 +89,7 @@ export class GLTFLoader {
         return await this.parse(gl, desc, dir);
     }
 
-    static async parse(gl, desc, dir) {
+    static async parse(gl: GLContext, desc, dir) {
         if (desc.asset === undefined || desc.asset.version[0] < 2) console.warn('Only GLTF >=2.0 supported. Attempting to parse.');
 
         if (desc.extensionsRequired?.includes('KHR_texture_basisu') && !this.basisManager)
@@ -300,7 +310,7 @@ export class GLTFLoader {
                 }
 
                 // jpg / png
-                const image = new Image();
+                const image = new Image() as HTMLImageElement & { ready: Promise<any> };
                 image.name = name;
                 if (uri) {
                     image.src = this.resolveURI(uri, dir);
@@ -310,7 +320,7 @@ export class GLTFLoader {
                     image.src = URL.createObjectURL(blob);
                 }
                 image.ready = new Promise((res) => {
-                    image.onload = () => res();
+                    image.onload = () => res(void 0);
                 });
                 return image;
             })
@@ -322,7 +332,7 @@ export class GLTFLoader {
         return desc.textures.map((textureInfo) => this.createTexture(gl, desc, images, textureInfo));
     }
 
-    static createTexture(gl, desc, images, { sampler: samplerIndex, source: sourceIndex, name, extensions, extras }) {
+    static createTexture(gl, desc, images, { sampler: samplerIndex = null, source: sourceIndex = null, name = null, extensions = null }) {
         if (sourceIndex === undefined && !!extensions) {
             // Basis extension source index
             if (extensions.KHR_texture_basisu) sourceIndex = extensions.KHR_texture_basisu.source;
@@ -331,7 +341,7 @@ export class GLTFLoader {
         const image = images[sourceIndex];
         if (image.texture) return image.texture;
 
-        const options = {
+        const options: Partial<IRegularTextureInit<HTMLImageElement>> = {
             flipY: false,
             wrapS: gl.REPEAT, // Repeat by default, opposed to OGL's clamp by default
             wrapT: gl.REPEAT,
@@ -391,7 +401,7 @@ export class GLTFLoader {
                     metallicRoughnessTexture,
                     //   extensions,
                     //   extras,
-                } = pbrMetallicRoughness;
+                } = pbrMetallicRoughness as any;
 
                 if (baseColorTexture) {
                     baseColorTexture.texture = textures[baseColorTexture.index];
@@ -506,7 +516,7 @@ export class GLTFLoader {
                 } else {
                     primitives = this.parsePrimitives(gl, primitives, desc, bufferViews, materials, numInstances, isLightmap).map(
                         ({ geometry, program, mode }) => {
-                            const mesh = new Mesh(gl, { geometry, program, mode });
+                            const mesh = new Mesh(gl, { geometry, program, mode }) as Mesh & {numInstances?: number};
                             mesh.name = name;
                             // Tag mesh so that nodes can add their transforms to the instance attribute
                             mesh.numInstances = numInstances;
@@ -540,7 +550,7 @@ export class GLTFLoader {
                 extras, // optional
             }) => {
                 // TODO: materials
-                const program = new NormalProgram(gl);
+                const program = NormalProgram(gl) as Program & { gltfMaterial: any };
                 if (materialIndex !== undefined) {
                     program.gltfMaterial = materials[materialIndex];
                 }
@@ -661,7 +671,7 @@ export class GLTFLoader {
                 extensions, // optional
                 extras, // optional
             }) => {
-                const node = new Transform();
+                const node = new Transform() as Transform & { extras?: any;  extensions?: any};
                 if (name) node.name = name;
                 node.extras = extras;
                 node.extensions = extensions;
@@ -877,7 +887,7 @@ export class GLTFLoader {
             if (!node?.extensions?.KHR_lights_punctual) return;
             const lightIndex = node.extensions.KHR_lights_punctual.light;
             const lightDesc = lightsDescArray[lightIndex];
-            const light = {
+            const light: Record<string, { value: any }> = {
                 name: lightDesc.name || '',
                 color: { value: new Vec3().set(lightDesc.color || 1) },
             };

@@ -64,6 +64,7 @@ export interface IEmptyTextureInit extends IBaseTextureInit {
 export type ITextureInit<T extends IImageSource> = IRegularTextureInit<T> | IEmptyTextureInit;
 
 export class Texture<T extends IImageSource = null> implements IDisposable {
+    public name?: string;
     public image: T;
 
     public readonly gl: GLContext;
