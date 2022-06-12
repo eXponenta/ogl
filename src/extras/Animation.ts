@@ -1,5 +1,6 @@
 import { Vec3 } from '../math/Vec3.js';
 import { Quat } from '../math/Quat.js';
+import type { Transform } from '../core/Transform.js';
 
 const prevPos = new Vec3();
 const prevRot = new Quat();
@@ -9,8 +10,24 @@ const nextPos = new Vec3();
 const nextRot = new Quat();
 const nextScl = new Vec3();
 
+export interface IAnimData {
+    frames: Array<any>;
+}
+
+export interface IAnimInit {
+    objects: Transform[];
+    data: IAnimData;
+}
+
 export class Animation {
-    constructor({ objects, data }) {
+    public readonly objects: Transform[];
+    public readonly data: IAnimData;
+
+    public elapsed: number = 0;
+    public weight: number = 1;
+    public duration: number;
+
+    constructor({ objects, data }: IAnimInit) {
         this.objects = objects;
         this.data = data;
         this.elapsed = 0;
@@ -18,7 +35,7 @@ export class Animation {
         this.duration = data.frames.length - 1;
     }
 
-    update(totalWeight = 1, isSet) {
+    update(totalWeight: number = 1, isSet = false) {
         const weight = isSet ? 1 : this.weight / totalWeight;
         const elapsed = this.elapsed % this.duration;
 

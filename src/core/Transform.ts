@@ -4,6 +4,8 @@ import { Mat4 } from '../math/Mat4.js';
 import { Euler } from '../math/Euler.js';
 
 export class Transform {
+    public name?: string;
+
     public zDepth: number;
 
     public parent: Transform = null;

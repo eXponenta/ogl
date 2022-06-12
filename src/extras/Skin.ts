@@ -3,16 +3,59 @@ import { Transform } from '../core/Transform.js';
 import { Mat4 } from '../math/Mat4.js';
 import { Texture } from '../core/Texture.js';
 import { Animation } from './Animation.js';
+import type { IAnimData } from './Animation.js';
+import type { GLContext } from '../core/Renderer.js';
+import type { Geometry } from '../core/Geometry.js';
+import type { Program } from '../core/Program.js';
 
 const tempMat4 = new Mat4();
 
-export class Skin extends Mesh {
-    constructor(gl, { rig, geometry, program, mode = gl.TRIANGLES } = {}) {
+export interface IBoneData {
+    name: string;
+    parent: number;
+}
+
+export interface IBindPose {
+    position: Float32Array;
+    quaternion: Float32Array;
+    scale: Float32Array;
+}
+
+export interface IRigData {
+    bones: IBoneData[];
+    bindPose: IBindPose;
+}
+
+export interface ISkinInit {
+    rig: IRigData;
+    geometry: Geometry;
+    program: Program;
+    mode?: GLenum
+}
+
+export interface IBoneTransform extends Transform {
+    bindInverse: Mat4;
+}
+
+export class Skin extends Mesh<any, Program<'boneTexture' | 'boneTextureSize'>> {
+    private boneTexture: Texture<Float32Array>;
+    private boneTextureSize: number;
+    private animations: Animation[] = [];
+    private boneMatrices: Float32Array;
+
+    public root: Transform;
+    public bones: IBoneTransform[];
+
+    constructor(gl: GLContext, {
+        rig,
+        geometry,
+        program,
+        mode = gl.TRIANGLES
+    }: ISkinInit) {
         super(gl, { geometry, program, mode });
 
         this.createBones(rig);
         this.createBoneTexture();
-        this.animations = [];
 
         Object.assign(this.program.uniforms, {
             boneTexture: { value: this.boneTexture },
@@ -20,7 +63,7 @@ export class Skin extends Mesh {
         });
     }
 
-    createBones(rig) {
+    createBones(rig: IRigData) {
         // Create root so that can simply update world matrix of whole skeleton
         this.root = new Transform();
 
@@ -28,7 +71,7 @@ export class Skin extends Mesh {
         this.bones = [];
         if (!rig.bones || !rig.bones.length) return;
         for (let i = 0; i < rig.bones.length; i++) {
-            const bone = new Transform();
+            const bone = new Transform() as IBoneTransform;
 
             // Set initial values (bind pose)
             bone.position.fromArray(rig.bindPose.position, i * 3);
@@ -63,7 +106,7 @@ export class Skin extends Mesh {
             image: this.boneMatrices,
             generateMipmaps: false,
             type: this.gl.FLOAT,
-            internalFormat: this.gl.renderer.isWebgl2 ? this.gl.RGBA32F : this.gl.RGBA,
+            internalFormat: this.gl.renderer.isWebgl2 ? (this.gl as WebGL2RenderingContext).RGBA32F : this.gl.RGBA,
             minFilter: this.gl.NEAREST,
             magFilter: this.gl.NEAREST,
             flipY: false,
@@ -71,7 +114,7 @@ export class Skin extends Mesh {
         });
     }
 
-    addAnimation(data) {
+    addAnimation(data: IAnimData) {
         const animation = new Animation({ objects: this.bones, data });
         this.animations.push(animation);
         return animation;
@@ -88,7 +131,7 @@ export class Skin extends Mesh {
         });
     }
 
-    draw({ camera } = {}) {
+    draw({ camera = null } = {}) {
         // Update world matrices manually, as not part of scene graph
         this.root.updateMatrixWorld(true);
 

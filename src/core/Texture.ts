@@ -29,7 +29,7 @@ export type INativeImageSource =
     HTMLVideoElement |
     null;
 
-export type IImageSource = INativeImageSource | ICompressedImageData | null;
+export type IImageSource = INativeImageSource | ICompressedImageData | Uint8Array | Float32Array | null;
 
 export interface ITextureStyleInit {
     target: GLenum;
