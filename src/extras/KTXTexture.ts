@@ -1,10 +1,27 @@
-import { Texture } from '../core/Texture.js';
+import { GLContext } from '../core/Renderer.js';
+import { ICompressedImageData, Texture } from '../core/Texture.js';
 
 // TODO: Support cubemaps
 // Generate textures using https://github.com/TimvanScherpenzeel/texture-compressor
 
-export class KTXTexture extends Texture {
-    constructor(gl, { buffer, wrapS = gl.CLAMP_TO_EDGE, wrapT = gl.CLAMP_TO_EDGE, anisotropy = 0, minFilter, magFilter } = {}) {
+export interface IKTXTextureInit {
+    buffer: ArrayBuffer;
+    wrapS: GLenum;
+    wrapT: GLenum;
+    anisotropy: number;
+    minFilter: GLenum;
+    magFilter: GLenum;
+}
+
+export class KTXTexture extends Texture<ICompressedImageData> {
+    constructor(gl: GLContext, {
+        buffer,
+        wrapS = gl.CLAMP_TO_EDGE,
+        wrapT = gl.CLAMP_TO_EDGE,
+        anisotropy = 0,
+        minFilter,
+        magFilter
+    }: Partial<IKTXTextureInit> = {}) {
         super(gl, {
             generateMipmaps: false,
             wrapS,
@@ -14,16 +31,18 @@ export class KTXTexture extends Texture {
             magFilter,
         });
 
-        if (buffer) return this.parseBuffer(buffer);
+        if (buffer) {
+            this.parseBuffer(buffer);
+        }
     }
 
-    parseBuffer(buffer) {
+    parseBuffer(buffer: ArrayBuffer) {
         const ktx = new KhronosTextureContainer(buffer);
         ktx.mipmaps.isCompressedTexture = true;
 
         // Update texture
         this.image = ktx.mipmaps;
-        this.internalFormat = ktx.glInternalFormat;
+        (this as any).internalFormat = ktx.glInternalFormat;
         if (ktx.numberOfMipmapLevels > 1) {
             if (this.minFilter === this.gl.LINEAR) this.minFilter = this.gl.NEAREST_MIPMAP_LINEAR;
         } else {
@@ -35,7 +54,10 @@ export class KTXTexture extends Texture {
     }
 }
 
-function KhronosTextureContainer(buffer) {
+// TODO
+// Port to es6 class
+
+function KhronosTextureContainer(buffer: ArrayBuffer) {
     const idCheck = [0xab, 0x4b, 0x54, 0x58, 0x20, 0x31, 0x31, 0xbb, 0x0d, 0x0a, 0x1a, 0x0a];
     const id = new Uint8Array(buffer, 0, 12);
     for (let i = 0; i < id.length; i++) if (id[i] !== idCheck[i]) return console.error('File missing KTX identifier');

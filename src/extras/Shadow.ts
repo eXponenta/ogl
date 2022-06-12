@@ -1,9 +1,39 @@
+import type { Mesh } from '../core/Mesh.js';
+
 import { Camera } from '../core/Camera.js';
 import { Program } from '../core/Program.js';
+import { GLContext } from '../core/Renderer.js';
 import { RenderTarget } from '../core/RenderTarget.js';
 
+export interface IShadowReadyMesh extends Mesh {
+    colorProgram?: Program;
+    depthProgram?: Program;
+}
+
+export interface IShadowPassInit {
+    mesh: IShadowReadyMesh,
+    receive?: boolean;
+    cast?: boolean;
+    vertex?: string;
+    fragment?: string;
+    uniformProjection?: string;
+    uniformView?: string;
+    uniformTexture?: string;
+}
+
 export class Shadow {
-    constructor(gl, { light = new Camera(gl), width = 1024, height = width }) {
+    public readonly gl: GLContext;
+    public light: Camera;
+    public target: RenderTarget;
+
+    private depthProgram: Program;
+    private castMeshes: Mesh[] = [];
+
+    constructor(gl: GLContext, {
+        light = new Camera(gl),
+        width = 1024,
+        height = width
+    }) {
         this.gl = gl;
 
         this.light = light;
@@ -15,8 +45,6 @@ export class Shadow {
             fragment: defaultFragment,
             cullFace: null,
         });
-
-        this.castMeshes = [];
     }
 
     add({
@@ -28,7 +56,7 @@ export class Shadow {
         uniformProjection = 'shadowProjectionMatrix',
         uniformView = 'shadowViewMatrix',
         uniformTexture = 'tShadow',
-    }) {
+    }: IShadowPassInit) {
         // Add uniforms to existing program
         if (receive && !mesh.program.uniforms[uniformProjection]) {
             mesh.program.uniforms[uniformProjection] = { value: this.light.projectionMatrix };

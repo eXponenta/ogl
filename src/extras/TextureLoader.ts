@@ -1,4 +1,5 @@
-import { Texture } from '../core/Texture.js';
+import type { GLContext } from '../core/Renderer.js';
+import { IBaseTextureInit, Texture } from '../core/Texture.js';
 import { KTXTexture } from './KTXTexture.js';
 
 // For compressed textures, generate using https://github.com/TimvanScherpenzeel/texture-compressor
@@ -6,9 +7,13 @@ import { KTXTexture } from './KTXTexture.js';
 let cache = {};
 const supportedExtensions = [];
 
+export interface ITextureLoaderInit extends IBaseTextureInit {
+    src: Record<string, string> | string;
+}
+
 export class TextureLoader {
     static load(
-        gl,
+        gl: GLContext,
         {
             src, // string or object of extension:src key-values
             // {
@@ -36,7 +41,7 @@ export class TextureLoader {
             premultiplyAlpha = false,
             unpackAlignment = 4,
             flipY = true,
-        } = {}
+        }: Partial<ITextureLoaderInit> = {}
     ) {
         const support = this.getSupportedExtensions(gl);
         let ext = 'none';
@@ -50,6 +55,7 @@ export class TextureLoader {
         // Get first supported match, so put in order of preference
         if (typeof src === 'object') {
             for (const prop in src) {
+                // @ts-ignore
                 if (support.includes(prop.toLowerCase())) {
                     ext = prop.toLowerCase();
                     src = src[prop];
@@ -60,7 +66,7 @@ export class TextureLoader {
 
         // Stringify props
         const cacheID =
-            src +
+            <string>src +
             wrapS +
             wrapT +
             anisotropy +
@@ -87,14 +93,14 @@ export class TextureLoader {
             case 'astc':
                 // Load compressed texture using KTX format
                 texture = new KTXTexture(gl, {
-                    src,
+                    /* src, */
                     wrapS,
                     wrapT,
                     anisotropy,
                     minFilter,
                     magFilter,
                 });
-                texture.loaded = this.loadKTX(src, texture);
+                texture.loaded = this.loadKTX(<string>src, texture);
                 break;
             case 'webp':
             case 'jpg':
@@ -113,7 +119,7 @@ export class TextureLoader {
                     unpackAlignment,
                     flipY,
                 });
-                texture.loaded = this.loadImage(gl, src, texture, flipY);
+                texture.loaded = this.loadImage(gl, <string>src, texture, flipY);
                 break;
             default:
                 console.warn('No supported format supplied');
@@ -125,7 +131,7 @@ export class TextureLoader {
         return texture;
     }
 
-    static getSupportedExtensions(gl) {
+    static getSupportedExtensions(gl): string[] {
         if (supportedExtensions.length) return supportedExtensions;
 
         const extensions = {
@@ -148,13 +154,18 @@ export class TextureLoader {
         return supportedExtensions;
     }
 
-    static loadKTX(src, texture) {
+    static loadKTX(src: string, texture: KTXTexture) {
         return fetch(src)
             .then((res) => res.arrayBuffer())
             .then((buffer) => texture.parseBuffer(buffer));
     }
 
-    static loadImage(gl, src, texture, flipY) {
+    static loadImage(
+        gl: GLContext,
+        src: string,
+        texture: Texture<ImageBitmap | HTMLImageElement>,
+        flipY?: boolean
+    ): Promise<HTMLImageElement | ImageBitmap> {
         return decodeImage(src, flipY).then((imgBmp) => {
             // Catch non POT textures and update params to avoid errors
             if (!powerOfTwo(imgBmp.width) || !powerOfTwo(imgBmp.height)) {
@@ -167,7 +178,7 @@ export class TextureLoader {
 
             // For createImageBitmap, close once uploaded
             texture.onUpdate = () => {
-                if (imgBmp.close) imgBmp.close();
+                if ((imgBmp as ImageBitmap).close) (imgBmp as ImageBitmap).close();
                 texture.onUpdate = null;
             };
 
@@ -189,7 +200,7 @@ function powerOfTwo(value) {
     return Math.log2(value) % 1 === 0;
 }
 
-function decodeImage(src, flipY) {
+function decodeImage(src: string, flipY: boolean): Promise<ImageBitmap | HTMLImageElement> {
     return new Promise((resolve) => {
         // Only chrome's implementation of createImageBitmap is fully supported
         const isChrome = navigator.userAgent.toLowerCase().includes('chrome');
