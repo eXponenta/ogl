@@ -1,17 +1,43 @@
 import { Mesh } from '../core/Mesh.js';
 import { Mat4 } from '../math/Mat4.js';
 import { Texture } from '../core/Texture.js';
+import type { GLContext } from '../core/Renderer.js';
+import type { Geometry } from '../core/Geometry.js';
+import type { Program } from '../core/Program.js';
+import type { GLTFAnimation } from './GLTFAnimation.js';
 
 const tempMat4 = new Mat4();
 const identity = new Mat4();
 
+export interface IGLTFSkeletoneData {
+    joints: Array<any>;
+}
+
+export interface IGLTFSkinData {
+    skeleton: IGLTFSkeletoneData;
+    geometry: Geometry;
+    program: Program;
+    mode: GLenum;
+}
+
 export class GLTFSkin extends Mesh {
-    constructor(gl, { skeleton, geometry, program, mode = gl.TRIANGLES } = {}) {
+    public readonly skeleton: IGLTFSkeletoneData;
+    public readonly animations: GLTFAnimation[] = [];
+
+    private boneMatrices: Float32Array;
+    private boneTextureSize: number;
+    private boneTexture: Texture<Float32Array>;
+
+    constructor(gl: GLContext, {
+        skeleton,
+        geometry,
+        program,
+        mode = gl.TRIANGLES
+    }: IGLTFSkinData) {
         super(gl, { geometry, program, mode });
         this.skeleton = skeleton;
         this.program = program;
         this.createBoneTexture();
-        this.animations = [];
     }
 
     createBoneTexture() {
@@ -23,7 +49,7 @@ export class GLTFSkin extends Mesh {
             image: this.boneMatrices,
             generateMipmaps: false,
             type: this.gl.FLOAT,
-            internalFormat: this.gl.renderer.isWebgl2 ? this.gl.RGBA32F : this.gl.RGBA,
+            internalFormat: this.gl.renderer.isWebgl2 ? (this.gl as any).RGBA32F : this.gl.RGBA,
             minFilter: this.gl.NEAREST,
             magFilter: this.gl.NEAREST,
             flipY: false,
@@ -58,7 +84,7 @@ export class GLTFSkin extends Mesh {
         if (this.boneTexture) this.boneTexture.needsUpdate = true;
     }
 
-    draw({ camera } = {}) {
+    draw({ camera = null } = {}) {
         if (!this.program.uniforms.boneTexture) {
             Object.assign(this.program.uniforms, {
                 boneTexture: { value: this.boneTexture },
