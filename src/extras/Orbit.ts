@@ -5,14 +5,41 @@
 
 import { Vec3 } from '../math/Vec3.js';
 import { Vec2 } from '../math/Vec2.js';
+import type { Camera } from '../core/Camera.js';
 
 const STATE = { NONE: -1, ROTATE: 0, DOLLY: 1, PAN: 2, DOLLY_PAN: 3 };
 const tempVec3 = new Vec3();
 const tempVec2a = new Vec2();
 const tempVec2b = new Vec2();
 
+
+export interface IOrbitInit {
+    element: HTMLElement | Document;
+    enabled: boolean;
+    target: Vec3;
+    ease: number;
+    inertia: number;
+    enableRotate: boolean;
+    rotateSpeed: number;
+    autoRotate: boolean;
+    autoRotateSpeed: number;
+    enableZoom: boolean;
+    zoomSpeed: number;
+    zoomStyle: 'dolly' | 'zoom';
+    enablePan: boolean;
+    panSpeed: number;
+    minPolarAngle: number;
+    maxPolarAngle: number;
+    minAzimuthAngle: number;
+    maxAzimuthAngle: number;
+    minDistance: number;
+    maxDistance: number;
+}
+
+// TODO
+// Move to es6 class
 export function Orbit(
-    object,
+    object: Camera,
     {
         element = document,
         enabled = true,
@@ -34,7 +61,7 @@ export function Orbit(
         maxAzimuthAngle = Infinity,
         minDistance = 0,
         maxDistance = Infinity,
-    } = {}
+    }: Partial<IOrbitInit> = {}
 ) {
     this.enabled = enabled;
     this.target = target;
@@ -144,11 +171,11 @@ export function Orbit(
         tempVec3.copy(object.position).sub(this.target);
         let targetDistance = tempVec3.distance();
         targetDistance *= Math.tan((((object.fov || 45) / 2) * Math.PI) / 180.0);
-        panLeft((2 * deltaX * targetDistance) / el.clientHeight, object.matrix);
-        panUp((2 * deltaY * targetDistance) / el.clientHeight, object.matrix);
+        panLeft((2 * deltaX * targetDistance) / (<any>el).clientHeight, object.matrix);
+        panUp((2 * deltaY * targetDistance) / (<any>el).clientHeight, object.matrix);
     };
 
-    const dolly = (dollyScale) => {
+    const dolly = (dollyScale: number) => {
         if (this.zoomStyle === 'dolly') sphericalDelta.radius /= dollyScale;
         else {
             object.fov /= dollyScale;
@@ -162,16 +189,16 @@ export function Orbit(
         sphericalDelta.theta -= angle;
     }
 
-    function handleMoveRotate(x, y) {
+    function handleMoveRotate(x: number, y: number) {
         tempVec2a.set(x, y);
         tempVec2b.sub(tempVec2a, rotateStart).multiply(rotateSpeed);
         let el = element === document ? document.body : element;
-        sphericalDelta.theta -= (2 * Math.PI * tempVec2b.x) / el.clientHeight;
-        sphericalDelta.phi -= (2 * Math.PI * tempVec2b.y) / el.clientHeight;
+        sphericalDelta.theta -= (2 * Math.PI * tempVec2b.x) / (<any>el).clientHeight;
+        sphericalDelta.phi -= (2 * Math.PI * tempVec2b.y) / (<any>el).clientHeight;
         rotateStart.copy(tempVec2a);
     }
 
-    function handleMouseMoveDolly(e) {
+    function handleMouseMoveDolly(e: MouseEvent) {
         tempVec2a.set(e.clientX, e.clientY);
         tempVec2b.sub(tempVec2a, dollyStart);
         if (tempVec2b.y > 0) {
@@ -182,14 +209,14 @@ export function Orbit(
         dollyStart.copy(tempVec2a);
     }
 
-    function handleMovePan(x, y) {
+    function handleMovePan(x: number, y: number) {
         tempVec2a.set(x, y);
         tempVec2b.sub(tempVec2a, panStart).multiply(panSpeed);
         pan(tempVec2b.x, tempVec2b.y);
         panStart.copy(tempVec2a);
     }
 
-    function handleTouchStartDollyPan(e) {
+    function handleTouchStartDollyPan(e: TouchEvent) {
         if (enableZoom) {
             let dx = e.touches[0].pageX - e.touches[1].pageX;
             let dy = e.touches[0].pageY - e.touches[1].pageY;
@@ -204,7 +231,7 @@ export function Orbit(
         }
     }
 
-    function handleTouchMoveDollyPan(e) {
+    function handleTouchMoveDollyPan(e: TouchEvent) {
         if (enableZoom) {
             let dx = e.touches[0].pageX - e.touches[1].pageX;
             let dy = e.touches[0].pageY - e.touches[1].pageY;
@@ -222,7 +249,7 @@ export function Orbit(
         }
     }
 
-    const onMouseDown = (e) => {
+    const onMouseDown = (e: MouseEvent) => {
         if (!this.enabled) return;
 
         switch (e.button) {
@@ -249,7 +276,7 @@ export function Orbit(
         }
     };
 
-    const onMouseMove = (e) => {
+    const onMouseMove = (e: MouseEvent) => {
         if (!this.enabled) return;
 
         switch (state) {
@@ -274,7 +301,7 @@ export function Orbit(
         state = STATE.NONE;
     };
 
-    const onMouseWheel = (e) => {
+    const onMouseWheel = (e: WheelEvent) => {
         if (!this.enabled || !enableZoom || (state !== STATE.NONE && state !== STATE.ROTATE)) return;
         e.stopPropagation();
         e.preventDefault();
@@ -286,7 +313,7 @@ export function Orbit(
         }
     };
 
-    const onTouchStart = (e) => {
+    const onTouchStart = (e: TouchEvent) => {
         if (!this.enabled) return;
         e.preventDefault();
 
@@ -306,7 +333,7 @@ export function Orbit(
         }
     };
 
-    const onTouchMove = (e) => {
+    const onTouchMove = (e: TouchEvent) => {
         if (!this.enabled) return;
         e.preventDefault();
         e.stopPropagation();
@@ -330,7 +357,7 @@ export function Orbit(
         state = STATE.NONE;
     };
 
-    const onContextMenu = (e) => {
+    const onContextMenu = (e: MouseEvent) => {
         if (!this.enabled) return;
         e.preventDefault();
     };
