@@ -147,6 +147,13 @@ export class Quat extends Array<number> {
         return this;
     }
 
+    /**
+     * Alias for Quat.slerp
+     */
+    lerp(q: Quat, t: number): this {
+        return this.slerp(q, t);
+    }
+
     fromArray(a: WritableArrayLike, o: number = 0): this {
         this[0] = a[o];
         this[1] = a[o + 1];
