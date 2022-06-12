@@ -58,6 +58,9 @@ const TRANSFORMS = {
     rotation: 'quaternion',
     scale: 'scale',
 };
+/**
+ * TODO: Restrict types!!!
+ */
 export class GLTFLoader {
     static setBasisManager(manager) {
         this.basisManager = manager;
@@ -270,7 +273,7 @@ export class GLTFLoader {
                 image.src = URL.createObjectURL(blob);
             }
             image.ready = new Promise((res) => {
-                image.onload = () => res();
+                image.onload = () => res(void 0);
             });
             return image;
         }));
@@ -280,7 +283,7 @@ export class GLTFLoader {
             return null;
         return desc.textures.map((textureInfo) => this.createTexture(gl, desc, images, textureInfo));
     }
-    static createTexture(gl, desc, images, { sampler: samplerIndex, source: sourceIndex, name, extensions, extras }) {
+    static createTexture(gl, desc, images, { sampler: samplerIndex = null, source: sourceIndex = null, name = null, extensions = null }) {
         if (sourceIndex === undefined && !!extensions) {
             // Basis extension source index
             if (extensions.KHR_texture_basisu)
@@ -461,7 +464,7 @@ export class GLTFLoader {
         extras, // optional
          }) => {
             // TODO: materials
-            const program = new NormalProgram(gl);
+            const program = NormalProgram(gl);
             if (materialIndex !== undefined) {
                 program.gltfMaterial = materials[materialIndex];
             }

@@ -10,7 +10,7 @@ export interface ICompressedImageData extends Array<ICompressedImageFrame> {
     isCompressedTexture: boolean;
 }
 export declare type INativeImageSource = HTMLCanvasElement | HTMLImageElement | ImageBitmap | HTMLVideoElement | null;
-export declare type IImageSource = INativeImageSource | ICompressedImageData | null;
+export declare type IImageSource = INativeImageSource | ICompressedImageData | Uint8Array | Float32Array | null;
 export interface ITextureStyleInit {
     target: GLenum;
     type: GLenum;
@@ -38,6 +38,7 @@ export interface IEmptyTextureInit extends IBaseTextureInit {
 }
 export declare type ITextureInit<T extends IImageSource> = IRegularTextureInit<T> | IEmptyTextureInit;
 export declare class Texture<T extends IImageSource = null> implements IDisposable {
+    name?: string;
     image: T;
     readonly gl: GLContext;
     readonly id: number;

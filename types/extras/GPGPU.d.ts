@@ -11,7 +11,7 @@ export class GPGPU {
     size: number;
     coords: Float32Array;
     uniform: {
-        value: Texture<import("../core/Texture.js").IImageSource>;
+        value: Texture<Float32Array>;
     };
     fbo: {
         read: RenderTarget;
@@ -25,7 +25,7 @@ export class GPGPU {
         textureUniform?: string;
         enabled?: boolean;
     }): {
-        mesh: Mesh<Triangle, Program<"">>;
+        mesh: Mesh<Triangle, Program<never>>;
         program: Program<never>;
         uniforms: {};
         enabled: boolean;

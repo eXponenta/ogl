@@ -28,6 +28,7 @@ const fragment = /* glsl */ `
         gl_FragColor.a = 1.0;
     }
 `;
+// TODO Port to es6 class
 export function NormalProgram(gl) {
     return new Program(gl, {
         vertex: vertex,

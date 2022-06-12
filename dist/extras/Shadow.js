@@ -3,6 +3,7 @@ import { Program } from '../core/Program.js';
 import { RenderTarget } from '../core/RenderTarget.js';
 export class Shadow {
     constructor(gl, { light = new Camera(gl), width = 1024, height = width }) {
+        this.castMeshes = [];
         this.gl = gl;
         this.light = light;
         this.target = new RenderTarget(gl, { width, height });
@@ -11,7 +12,6 @@ export class Shadow {
             fragment: defaultFragment,
             cullFace: null,
         });
-        this.castMeshes = [];
     }
     add({ mesh, receive = true, cast = true, vertex = defaultVertex, fragment = defaultFragment, uniformProjection = 'shadowProjectionMatrix', uniformView = 'shadowViewMatrix', uniformTexture = 'tShadow', }) {
         // Add uniforms to existing program

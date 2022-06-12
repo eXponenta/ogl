@@ -1,6 +1,4 @@
 import { Texture } from '../core/Texture.js';
-// TODO: Support cubemaps
-// Generate textures using https://github.com/TimvanScherpenzeel/texture-compressor
 export class KTXTexture extends Texture {
     constructor(gl, { buffer, wrapS = gl.CLAMP_TO_EDGE, wrapT = gl.CLAMP_TO_EDGE, anisotropy = 0, minFilter, magFilter } = {}) {
         super(gl, {
@@ -11,8 +9,9 @@ export class KTXTexture extends Texture {
             minFilter,
             magFilter,
         });
-        if (buffer)
-            return this.parseBuffer(buffer);
+        if (buffer) {
+            this.parseBuffer(buffer);
+        }
     }
     parseBuffer(buffer) {
         const ktx = new KhronosTextureContainer(buffer);
@@ -32,6 +31,8 @@ export class KTXTexture extends Texture {
         // ktx.numberOfFaces
     }
 }
+// TODO
+// Port to es6 class
 function KhronosTextureContainer(buffer) {
     const idCheck = [0xab, 0x4b, 0x54, 0x58, 0x20, 0x31, 0x31, 0xbb, 0x0d, 0x0a, 0x1a, 0x0a];
     const id = new Uint8Array(buffer, 0, 12);

@@ -1,6 +1,13 @@
-export class GLTFLoader {
-    static setBasisManager(manager: any): void;
-    static load(gl: any, src: any): Promise<{
+import type { BasisManager } from './BasisManager.js';
+import type { GLContext } from '../core/Renderer.js';
+/**
+ * TODO: Restrict types!!!
+ */
+export declare class GLTFLoader {
+    static minFilter: GLenum;
+    static basisManager: BasisManager;
+    static setBasisManager(manager: BasisManager): void;
+    static load(gl: GLContext, src: string): Promise<{
         json: any;
         buffers: any[];
         bufferViews: any;
@@ -18,7 +25,7 @@ export class GLTFLoader {
         scenes: any;
         scene: any;
     }>;
-    static parse(gl: any, desc: any, dir: any): Promise<{
+    static parse(gl: GLContext, desc: any, dir: any): Promise<{
         json: any;
         buffers: any[];
         bufferViews: any;
@@ -43,12 +50,11 @@ export class GLTFLoader {
     static parseBufferViews(gl: any, desc: any, buffers: any): any;
     static parseImages(gl: any, desc: any, dir: any, bufferViews: any): Promise<any[]>;
     static parseTextures(gl: any, desc: any, images: any): any;
-    static createTexture(gl: any, desc: any, images: any, { sampler: samplerIndex, source: sourceIndex, name, extensions, extras }: {
-        sampler: any;
-        source: any;
-        name: any;
-        extensions: any;
-        extras: any;
+    static createTexture(gl: any, desc: any, images: any, { sampler: samplerIndex, source: sourceIndex, name, extensions }: {
+        sampler?: any;
+        source?: any;
+        name?: any;
+        extensions?: any;
     }): any;
     static parseMaterials(gl: any, desc: any, textures: any): any;
     static parseSkins(gl: any, desc: any, bufferViews: any): any;

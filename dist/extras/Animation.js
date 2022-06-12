@@ -8,13 +8,15 @@ const nextRot = new Quat();
 const nextScl = new Vec3();
 export class Animation {
     constructor({ objects, data }) {
+        this.elapsed = 0;
+        this.weight = 1;
         this.objects = objects;
         this.data = data;
         this.elapsed = 0;
         this.weight = 1;
         this.duration = data.frames.length - 1;
     }
-    update(totalWeight = 1, isSet) {
+    update(totalWeight = 1, isSet = false) {
         const weight = isSet ? 1 : this.weight / totalWeight;
         const elapsed = this.elapsed % this.duration;
         const floorFrame = Math.floor(elapsed);

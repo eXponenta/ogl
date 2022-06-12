@@ -113,6 +113,12 @@ export class Quat extends Array {
         QuatFunc.slerp(this, this, q, t);
         return this;
     }
+    /**
+     * Alias for Quat.slerp
+     */
+    lerp(q, t) {
+        return this.slerp(q, t);
+    }
     fromArray(a, o = 0) {
         this[0] = a[o];
         this[1] = a[o + 1];

@@ -1,24 +1,24 @@
-export class Curve {
-    constructor({ points, divisions, type }?: {
-        points?: Vec3[];
-        divisions?: number;
-        type?: string;
-    });
-    points: Vec3[];
+import { Vec3 } from '../math/Vec3.js';
+export declare const enum CURVE_TYPE {
+    CATMULLROM = "catmullrom",
+    CUBICBEZIER = "cubicbezier",
+    QUADRATICBEZIER = "quadraticbezier"
+}
+export interface ICurveInit {
+    points: Array<Vec3>;
     divisions: number;
-    type: string;
-    _getQuadraticBezierPoints(divisions?: number): Vec3[];
-    _getCubicBezierPoints(divisions?: number): Vec3[];
-    _getCatmullRomPoints(divisions?: number, a?: number, b?: number): any[];
-    getPoints(divisions?: number, a?: number, b?: number): any[];
+    type: CURVE_TYPE;
 }
-export namespace Curve {
-    export { CATMULLROM };
-    export { CUBICBEZIER };
-    export { QUADRATICBEZIER };
+export declare class Curve {
+    static CATMULLROM: CURVE_TYPE;
+    static CUBICBEZIER: CURVE_TYPE;
+    static QUADRATICBEZIER: CURVE_TYPE;
+    points: Array<Vec3>;
+    divisions: number;
+    type: CURVE_TYPE;
+    constructor({ points, divisions, type }?: Partial<ICurveInit>);
+    private _getQuadraticBezierPoints;
+    private _getCubicBezierPoints;
+    private _getCatmullRomPoints;
+    getPoints(divisions?: number, a?: number, b?: number): Vec3[];
 }
-import { Vec3 } from "../math/Vec3.js";
-declare const CATMULLROM: "catmullrom";
-declare const CUBICBEZIER: "cubicbezier";
-declare const QUADRATICBEZIER: "quadraticbezier";
-export {};

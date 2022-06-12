@@ -1,12 +1,24 @@
-export class GLTFAnimation {
-    constructor(data: any, weight?: number);
-    data: any;
+import { Vec3 } from '../math/Vec3.js';
+import { Quat } from '../math/Quat.js';
+import { Transform } from '../core/Transform.js';
+export interface IGLTFAnimRecord {
+    times: number[];
+    node: Transform;
+    transform: 'quaternion' | 'scale' | 'position';
+    interpolation: 'STEP' | 'CUBICSPLINE';
+    values: number[];
+}
+export interface IGLTFAnimData extends Array<IGLTFAnimRecord> {
+}
+export declare class GLTFAnimation {
+    readonly data: IGLTFAnimData;
     elapsed: number;
-    weight: number;
     loop: boolean;
-    startTime: any;
-    endTime: any;
+    weight: number;
+    startTime: number;
+    endTime: number;
     duration: number;
-    update(totalWeight: number, isSet: any): void;
-    cubicSplineInterpolate(t: any, prevVal: any, prevTan: any, nextTan: any, nextVal: any): any;
+    constructor(data: IGLTFAnimData, weight?: number);
+    update(totalWeight?: number, isSet?: boolean): void;
+    cubicSplineInterpolate<T extends Quat | Vec3>(t: number, prevVal: T, prevTan: T, nextTan: T, nextVal: T): T;
 }

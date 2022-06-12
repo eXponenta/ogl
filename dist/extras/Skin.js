@@ -5,11 +5,11 @@ import { Texture } from '../core/Texture.js';
 import { Animation } from './Animation.js';
 const tempMat4 = new Mat4();
 export class Skin extends Mesh {
-    constructor(gl, { rig, geometry, program, mode = gl.TRIANGLES } = {}) {
+    constructor(gl, { rig, geometry, program, mode = gl.TRIANGLES }) {
         super(gl, { geometry, program, mode });
+        this.animations = [];
         this.createBones(rig);
         this.createBoneTexture();
-        this.animations = [];
         Object.assign(this.program.uniforms, {
             boneTexture: { value: this.boneTexture },
             boneTextureSize: { value: this.boneTextureSize },
@@ -75,7 +75,7 @@ export class Skin extends Mesh {
             animation.update(total, i === 0);
         });
     }
-    draw({ camera } = {}) {
+    draw({ camera = null } = {}) {
         // Update world matrices manually, as not part of scene graph
         this.root.updateMatrixWorld(true);
         // Update bone texture

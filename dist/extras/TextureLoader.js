@@ -29,6 +29,7 @@ export class TextureLoader {
         // Get first supported match, so put in order of preference
         if (typeof src === 'object') {
             for (const prop in src) {
+                // @ts-ignore
                 if (support.includes(prop.toLowerCase())) {
                     ext = prop.toLowerCase();
                     src = src[prop];
@@ -63,7 +64,7 @@ export class TextureLoader {
             case 'astc':
                 // Load compressed texture using KTX format
                 texture = new KTXTexture(gl, {
-                    src,
+                    /* src, */
                     wrapS,
                     wrapT,
                     anisotropy,

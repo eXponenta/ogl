@@ -1,54 +1,69 @@
-export class Post {
-    constructor(gl: any, { width, height, dpr, wrapS, wrapT, minFilter, magFilter, geometry, targetOnly, }?: {
-        width: any;
-        height: any;
-        dpr: any;
-        wrapS?: any;
-        wrapT?: any;
-        minFilter?: any;
-        magFilter?: any;
-        geometry?: Triangle;
-        targetOnly?: any;
-    });
-    gl: any;
-    options: {
-        wrapS: any;
-        wrapT: any;
-        minFilter: any;
-        magFilter: any;
-    };
-    passes: any[];
-    geometry: Triangle;
-    uniform: {
+import { Program } from '../core/Program.js';
+import { Mesh } from '../core/Mesh.js';
+import type { GLContext } from '../core/Renderer.js';
+import type { Geometry } from '../core/Geometry.js';
+export interface IPostInit {
+    width: number;
+    height: number;
+    dpr: number;
+    wrapS?: GLenum;
+    wrapT?: GLenum;
+    minFilter?: GLenum;
+    magFilter?: GLenum;
+    geometry?: Geometry;
+    targetOnly?: boolean;
+}
+export interface IRenderPassInit {
+    vertex: string;
+    fragment: string;
+    uniforms: Record<string, {
         value: any;
+    }> | {};
+    enabled: boolean;
+    textureUniform: string;
+}
+export interface IRenderPass {
+    mesh: Mesh;
+    program: Program;
+    uniforms: Record<string, {
+        value: any;
+    }> | {};
+    enabled: boolean;
+    textureUniform: string;
+}
+export declare class Post {
+    readonly gl: GLContext;
+    readonly options: {
+        wrapS: GLenum;
+        wrapT: GLenum;
+        minFilter: GLenum;
+        magFilter: GLenum;
+        width: number;
+        height: number;
     };
-    targetOnly: any;
-    fbo: {
-        read: any;
-        write: any;
-        swap: () => void;
-    };
-    addPass({ vertex, fragment, uniforms, textureUniform, enabled }?: {
-        vertex?: string;
-        fragment?: string;
-        uniforms?: {};
-        textureUniform?: string;
-        enabled?: boolean;
-    }): {
-        mesh: Mesh<Triangle, Program<"">>;
-        program: Program<never>;
-        uniforms: {};
+    readonly geometry: Geometry;
+    readonly targetOnly: boolean;
+    width: number;
+    height: number;
+    dpr: number;
+    passes: IRenderPass[];
+    private uniform;
+    private fbo;
+    constructor(gl: GLContext, { width, height, dpr, wrapS, wrapT, minFilter, magFilter, geometry, targetOnly, }?: Partial<IPostInit>);
+    addPass({ vertex, fragment, uniforms, textureUniform, enabled }?: Partial<IRenderPassInit>): {
+        mesh: Mesh<Geometry, Program<string>>;
+        program: Program<string>;
+        uniforms: {} | Record<string, {
+            value: any;
+        }>;
         enabled: boolean;
         textureUniform: string;
     };
     resize({ width, height, dpr }?: {
-        width: any;
-        height: any;
-        dpr: any;
+        width?: number;
+        height?: number;
+        dpr?: number;
     }): void;
-    dpr: any;
-    width: any;
-    height: any;
     render({ scene, camera, texture, target, update, sort, frustumCull }: {
         scene: any;
         camera: any;
@@ -59,6 +74,3 @@ export class Post {
         frustumCull?: boolean;
     }): void;
 }
-import { Triangle } from "./Triangle.js";
-import { Program } from "../core/Program.js";
-import { Mesh } from "../core/Mesh.js";

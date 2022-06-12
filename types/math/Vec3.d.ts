@@ -26,7 +26,7 @@ export declare class Vec3 extends Array<number> {
     squaredDistance(v?: Vec3): number;
     negate(v?: Vec3): this;
     cross(va: Vec3, vb?: Vec3): this;
-    scale(v: Vec3): this;
+    scale(v: number): this;
     normalize(): this;
     dot(v: Vec3): number;
     equals(v: Vec3): boolean;

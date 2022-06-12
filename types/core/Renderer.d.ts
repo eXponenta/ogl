@@ -36,7 +36,7 @@ export interface IRendererInit {
 }
 export interface IRenderOptions {
     scene: Transform;
-    camera: Camera;
+    camera?: Camera;
     target?: RenderTarget;
     update?: boolean;
     sort?: boolean;

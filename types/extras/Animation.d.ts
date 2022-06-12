@@ -1,12 +1,17 @@
-export class Animation {
-    constructor({ objects, data }: {
-        objects: any;
-        data: any;
-    });
-    objects: any;
-    data: any;
+import type { Transform } from '../core/Transform.js';
+export interface IAnimData {
+    frames: Array<any>;
+}
+export interface IAnimInit {
+    objects: Transform[];
+    data: IAnimData;
+}
+export declare class Animation {
+    readonly objects: Transform[];
+    readonly data: IAnimData;
     elapsed: number;
     weight: number;
     duration: number;
-    update(totalWeight: number, isSet: any): void;
+    constructor({ objects, data }: IAnimInit);
+    update(totalWeight?: number, isSet?: boolean): void;
 }

@@ -1,22 +1,27 @@
-export class GLTFSkin extends Mesh<import("../index.js").Geometry, import("../index.js").Program<"">> {
-    constructor(gl: any, { skeleton, geometry, program, mode }?: {
-        skeleton: any;
-        geometry: any;
-        program: any;
-        mode?: any;
-    });
-    skeleton: any;
-    program: any;
-    animations: any[];
+import { Mesh } from '../core/Mesh.js';
+import type { GLContext } from '../core/Renderer.js';
+import type { Geometry } from '../core/Geometry.js';
+import type { Program } from '../core/Program.js';
+import type { GLTFAnimation } from './GLTFAnimation.js';
+export interface IGLTFSkeletoneData {
+    joints: Array<any>;
+}
+export interface IGLTFSkinData {
+    skeleton: IGLTFSkeletoneData;
+    geometry: Geometry;
+    program: Program;
+    mode: GLenum;
+}
+export declare class GLTFSkin extends Mesh {
+    readonly skeleton: IGLTFSkeletoneData;
+    readonly animations: GLTFAnimation[];
+    private boneMatrices;
+    private boneTextureSize;
+    private boneTexture;
+    constructor(gl: GLContext, { skeleton, geometry, program, mode }: IGLTFSkinData);
     createBoneTexture(): void;
-    boneMatrices: Float32Array;
-    boneTextureSize: number;
-    boneTexture: Texture<import("../core/Texture.js").IImageSource>;
     updateUniforms(): void;
     draw({ camera }?: {
-        camera: any;
+        camera?: any;
     }): void;
-    worldMatrix: any;
 }
-import { Mesh } from "../core/Mesh.js";
-import { Texture } from "../core/Texture.js";

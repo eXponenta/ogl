@@ -1,18 +1,14 @@
-export class KTXTexture extends Texture<null> {
-    constructor(gl: any, { buffer, wrapS, wrapT, anisotropy, minFilter, magFilter }?: {
-        buffer: any;
-        wrapS?: any;
-        wrapT?: any;
-        anisotropy?: number;
-        minFilter: any;
-        magFilter: any;
-    });
-    parseBuffer(buffer: any): void;
-    image: {
-        data: Uint8Array;
-        width: number;
-        height: number;
-    }[];
-    internalFormat: number;
+import { GLContext } from '../core/Renderer.js';
+import { ICompressedImageData, Texture } from '../core/Texture.js';
+export interface IKTXTextureInit {
+    buffer: ArrayBuffer;
+    wrapS: GLenum;
+    wrapT: GLenum;
+    anisotropy: number;
+    minFilter: GLenum;
+    magFilter: GLenum;
 }
-import { Texture } from "../core/Texture.js";
+export declare class KTXTexture extends Texture<ICompressedImageData> {
+    constructor(gl: GLContext, { buffer, wrapS, wrapT, anisotropy, minFilter, magFilter }?: Partial<IKTXTextureInit>);
+    parseBuffer(buffer: ArrayBuffer): void;
+}

@@ -3,6 +3,7 @@ import { Quat } from '../math/Quat.js';
 import { Mat4 } from '../math/Mat4.js';
 import { Euler } from '../math/Euler.js';
 export declare class Transform {
+    name?: string;
     zDepth: number;
     parent: Transform;
     readonly children: Transform[];

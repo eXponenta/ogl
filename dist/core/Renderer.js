@@ -327,7 +327,7 @@ export class Renderer {
         }
         return renderList;
     }
-    render({ scene, camera, target = null, update = true, sort = true, frustumCull = true, clear }) {
+    render({ scene, camera = null, target = null, update = true, sort = true, frustumCull = true, clear }) {
         if (target === null) {
             // make sure no render target bound so draws to canvas
             this.bindFramebuffer();

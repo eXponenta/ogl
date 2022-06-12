@@ -31,6 +31,10 @@ export declare class Quat extends Array<number> {
     fromEuler(euler: Euler): this;
     fromAxisAngle(axis: Vec3, a: number): this;
     slerp(q: Quat, t: number): this;
+    /**
+     * Alias for Quat.slerp
+     */
+    lerp(q: Quat, t: number): this;
     fromArray(a: WritableArrayLike, o?: number): this;
     toArray(a?: WritableArrayLike, o?: number): WritableArrayLike;
 }

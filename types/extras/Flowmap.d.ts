@@ -18,7 +18,7 @@ export class Flowmap {
     aspect: number;
     mouse: Vec2;
     velocity: Vec2;
-    mesh: Mesh<Triangle, Program<"">>;
+    mesh: Mesh<Triangle, Program<"tMap" | "uFalloff" | "uAlpha" | "uDissipation" | "uAspect" | "uMouse" | "uVelocity">>;
     update(): void;
 }
 import { Vec2 } from "../math/Vec2.js";

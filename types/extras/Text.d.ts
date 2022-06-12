@@ -1,26 +1,26 @@
-export function Text({ font, text, width, align, size, letterSpacing, lineHeight, wordSpacing, wordBreak, }: {
-    font: any;
-    text: any;
+export interface IMSDFFont {
+    chars: Array<any>;
+    common: {
+        lineHeight: number;
+        base: number;
+        scaleW: number;
+        scaleH: number;
+    };
+    kernings: Array<{
+        first: number;
+        second: number;
+        amount: number;
+    }>;
+}
+export interface ITextInit {
+    font: IMSDFFont;
+    text: string;
     width?: number;
-    align?: string;
+    align?: 'left' | 'right' | 'center';
     size?: number;
     letterSpacing?: number;
     lineHeight?: number;
     wordSpacing?: number;
     wordBreak?: boolean;
-}): void;
-export class Text {
-    constructor({ font, text, width, align, size, letterSpacing, lineHeight, wordSpacing, wordBreak, }: {
-        font: any;
-        text: any;
-        width?: number;
-        align?: string;
-        size?: number;
-        letterSpacing?: number;
-        lineHeight?: number;
-        wordSpacing?: number;
-        wordBreak?: boolean;
-    });
-    resize: (options: any) => void;
-    update: (options: any) => void;
 }
+export declare function Text({ font, text, width, align, size, letterSpacing, lineHeight, wordSpacing, wordBreak, }: ITextInit): void;

@@ -10,32 +10,29 @@ const tmpQuatC = new Quat();
 const tmpQuatD = new Quat();
 export class GLTFAnimation {
     constructor(data, weight = 1) {
-        this.data = data;
         this.elapsed = 0;
-        this.weight = weight;
         // Set to false to not apply modulo to elapsed against duration
         this.loop = true;
+        this.data = data;
+        this.weight = weight;
         // Find starting time as exports from blender (perhaps others too) don't always start from 0
         this.startTime = data.reduce((a, { times }) => Math.min(a, times[0]), Infinity);
         // Get largest final time in all channels to calculate duration
         this.endTime = data.reduce((a, { times }) => Math.max(a, times[times.length - 1]), 0);
         this.duration = this.endTime - this.startTime;
     }
-    update(totalWeight = 1, isSet) {
+    update(totalWeight = 1, isSet = false) {
         const weight = isSet ? 1 : this.weight / totalWeight;
         const elapsed = !this.duration
             ? 0
             : (this.loop ? this.elapsed % this.duration : Math.min(this.elapsed, this.duration - 0.001)) + this.startTime;
         this.data.forEach(({ node, transform, interpolation, times, values }) => {
+            const isQuat = transform === 'quaternion';
+            const size = isQuat ? 4 : 3;
             if (!this.duration) {
-                let val = tmpVec3A;
-                let size = 3;
-                if (transform === 'quaternion') {
-                    val = tmpQuatA;
-                    size = 4;
-                }
+                let val = isQuat ? tmpQuatA : tmpVec3A;
                 val.fromArray(values, 0);
-                if (size === 4)
+                if (isQuat)
                     node[transform].slerp(val, weight);
                 else
                     node[transform].lerp(val, weight);
@@ -48,18 +45,10 @@ export class GLTFAnimation {
             let alpha = (elapsed - times[prevIndex]) / (times[nextIndex] - times[prevIndex]);
             if (interpolation === 'STEP')
                 alpha = 0;
-            let prevVal = tmpVec3A;
-            let prevTan = tmpVec3B;
-            let nextTan = tmpVec3C;
-            let nextVal = tmpVec3D;
-            let size = 3;
-            if (transform === 'quaternion') {
-                prevVal = tmpQuatA;
-                prevTan = tmpQuatB;
-                nextTan = tmpQuatC;
-                nextVal = tmpQuatD;
-                size = 4;
-            }
+            let prevVal = isQuat ? tmpQuatA : tmpVec3A;
+            let prevTan = isQuat ? tmpQuatB : tmpVec3B;
+            let nextTan = isQuat ? tmpQuatC : tmpVec3C;
+            let nextVal = isQuat ? tmpQuatD : tmpVec3D;
             if (interpolation === 'CUBICSPLINE') {
                 // Get the prev and next values from the indices
                 prevVal.fromArray(values, prevIndex * size * 3 + size * 1);
@@ -68,7 +57,7 @@ export class GLTFAnimation {
                 nextVal.fromArray(values, nextIndex * size * 3 + size * 1);
                 // interpolate for final value
                 prevVal = this.cubicSplineInterpolate(alpha, prevVal, prevTan, nextTan, nextVal);
-                if (size === 4)
+                if (isQuat)
                     prevVal.normalize();
             }
             else {
@@ -76,13 +65,13 @@ export class GLTFAnimation {
                 prevVal.fromArray(values, prevIndex * size);
                 nextVal.fromArray(values, nextIndex * size);
                 // interpolate for final value
-                if (size === 4)
+                if (isQuat)
                     prevVal.slerp(nextVal, alpha);
                 else
                     prevVal.lerp(nextVal, alpha);
             }
             // interpolate between multiple possible animations
-            if (size === 4)
+            if (isQuat)
                 node[transform].slerp(prevVal, weight);
             else
                 node[transform].lerp(prevVal, weight);

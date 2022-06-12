@@ -1,3 +1,5 @@
+// TODO Port to es6
+;
 export function Text({ font, text, width = Infinity, align = 'left', size = 1, letterSpacing = 0, lineHeight = 1.4, wordSpacing = 0, wordBreak = false, }) {
     const _this = this;
     let glyphs, buffers;

@@ -1,7 +1,4 @@
 import { Vec3 } from '../math/Vec3.js';
-const CATMULLROM = 'catmullrom';
-const CUBICBEZIER = 'cubicbezier';
-const QUADRATICBEZIER = 'quadraticbezier';
 // temp
 const _a0 = new Vec3(), _a1 = new Vec3(), _a2 = new Vec3(), _a3 = new Vec3();
 /**
@@ -52,7 +49,7 @@ function getCubicBezierPoint(t, p0, c0, c1, p1) {
     return ret;
 }
 export class Curve {
-    constructor({ points = [new Vec3(0, 0, 0), new Vec3(0, 1, 0), new Vec3(1, 1, 0), new Vec3(1, 0, 0)], divisions = 12, type = CATMULLROM } = {}) {
+    constructor({ points = [new Vec3(0, 0, 0), new Vec3(0, 1, 0), new Vec3(1, 1, 0), new Vec3(1, 0, 0)], divisions = 12, type = "catmullrom" /* CURVE_TYPE.CATMULLROM */ } = {}) {
         this.points = points;
         this.divisions = divisions;
         this.type = type;
@@ -124,7 +121,7 @@ export class Curve {
                 const [c0, c1] = getCtrlPoint(this.points, i - 1, a, b);
                 const c = new Curve({
                     points: [p0, c0, c1, p],
-                    type: CUBICBEZIER,
+                    type: "cubicbezier" /* CURVE_TYPE.CUBICBEZIER */,
                 });
                 points.pop();
                 points.push(...c.getPoints(divisions));
@@ -135,18 +132,18 @@ export class Curve {
     }
     getPoints(divisions = this.divisions, a = 0.168, b = 0.168) {
         const type = this.type;
-        if (type === QUADRATICBEZIER) {
+        if (type === "quadraticbezier" /* CURVE_TYPE.QUADRATICBEZIER */) {
             return this._getQuadraticBezierPoints(divisions);
         }
-        if (type === CUBICBEZIER) {
+        if (type === "cubicbezier" /* CURVE_TYPE.CUBICBEZIER */) {
             return this._getCubicBezierPoints(divisions);
         }
-        if (type === CATMULLROM) {
+        if (type === "catmullrom" /* CURVE_TYPE.CATMULLROM */) {
             return this._getCatmullRomPoints(divisions, a, b);
         }
         return this.points;
     }
 }
-Curve.CATMULLROM = CATMULLROM;
-Curve.CUBICBEZIER = CUBICBEZIER;
-Curve.QUADRATICBEZIER = QUADRATICBEZIER;
+Curve.CATMULLROM = "catmullrom" /* CURVE_TYPE.CATMULLROM */;
+Curve.CUBICBEZIER = "cubicbezier" /* CURVE_TYPE.CUBICBEZIER */;
+Curve.QUADRATICBEZIER = "quadraticbezier" /* CURVE_TYPE.QUADRATICBEZIER */;

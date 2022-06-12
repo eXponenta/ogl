@@ -4,12 +4,12 @@ import { Texture } from '../core/Texture.js';
 const tempMat4 = new Mat4();
 const identity = new Mat4();
 export class GLTFSkin extends Mesh {
-    constructor(gl, { skeleton, geometry, program, mode = gl.TRIANGLES } = {}) {
+    constructor(gl, { skeleton, geometry, program, mode = gl.TRIANGLES }) {
         super(gl, { geometry, program, mode });
+        this.animations = [];
         this.skeleton = skeleton;
         this.program = program;
         this.createBoneTexture();
-        this.animations = [];
     }
     createBoneTexture() {
         if (!this.skeleton.joints.length)
@@ -52,7 +52,7 @@ export class GLTFSkin extends Mesh {
         if (this.boneTexture)
             this.boneTexture.needsUpdate = true;
     }
-    draw({ camera } = {}) {
+    draw({ camera = null } = {}) {
         if (!this.program.uniforms.boneTexture) {
             Object.assign(this.program.uniforms, {
                 boneTexture: { value: this.boneTexture },

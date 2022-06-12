@@ -29,7 +29,7 @@ export class Polyline {
         value: number;
     };
     program: Program<never>;
-    mesh: Mesh<Geometry, Program<"">>;
+    mesh: Mesh<Geometry, Program<never>>;
     updateGeometry(): void;
     resize(): void;
 }
