@@ -54,7 +54,7 @@ export class RenderState {
 
     boundBuffer: WebGLBuffer = null;
 
-    uniformLocations: Map<string, WebGLActiveInfo> = new Map();
+    uniformLocations: Map<WebGLUniformLocation, any> = new Map();
 
     currentProgram: WebGLProgram = null;
 

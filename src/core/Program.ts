@@ -144,7 +144,15 @@ export class Program<U extends string = any> implements INativeObjectHolder {
         renderer.setDepthMask(this.depthWrite);
         renderer.setDepthFunc(this.depthFunc);
 
-        renderer.setBlendFunc(this.blendFunc.src, this.blendFunc.dst, this.blendFunc.srcAlpha, this.blendFunc.dstAlpha);
+        if (this.transparent) {
+            renderer.setBlendFunc(
+                this.blendFunc.src,
+                this.blendFunc.dst,
+                this.blendFunc.srcAlpha,
+                this.blendFunc.dstAlpha
+            );
+        }
+
         renderer.setBlendEquation(this.blendEquation.modeRGB, this.blendEquation.modeAlpha);
     }
 
@@ -170,6 +178,11 @@ export class Program<U extends string = any> implements INativeObjectHolder {
                     t.prepare({ context });
                 }
             }
+        }
+
+        if (this.blendFunc.src == null) {
+            if (context.premultipliedAlpha) this.setBlendFunc(GL_ENUMS.ONE, GL_ENUMS.ONE_MINUS_SRC_ALPHA);
+            else this.setBlendFunc(GL_ENUMS.SRC_ALPHA, GL_ENUMS.ONE_MINUS_SRC_ALPHA);
         }
 
         this.activeContext = context;
@@ -220,7 +233,7 @@ export class Program<U extends string = any> implements INativeObjectHolder {
 
                 // Check if texture needs to be updated
                 (uniform.value as Texture).bind(textureUnit);
-                return setUniform(gl, activeUniform.type, location, textureUnit);
+                return setUniform(context, activeUniform.type, location, textureUnit);
             }
 
             // For texture arrays, set uniform as an array of texture units instead of just one
@@ -232,10 +245,10 @@ export class Program<U extends string = any> implements INativeObjectHolder {
                     textureUnits.push(textureUnit);
                 });
 
-                return setUniform(gl, activeUniform.type, location, textureUnits);
+                return setUniform(context, activeUniform.type, location, textureUnits);
             }
 
-            setUniform(gl, activeUniform.type, location, uniform.value);
+            setUniform(context, activeUniform.type, location, uniform.value);
         });
 
         this.applyState(context);
@@ -255,25 +268,26 @@ export class Program<U extends string = any> implements INativeObjectHolder {
     }
 }
 
-function setUniform(gl, type, location, value) {
+function setUniform(context: Renderer, type: GLenum, location: WebGLUniformLocation, value: any) {
     value = value.length ? flatten(value) : value;
-    const setValue = gl.renderer.state.uniformLocations.get(location);
+    const setValue = context.state.uniformLocations.get(location);
+    const gl = context.gl;
 
     // Avoid redundant uniform commands
     if (value.length) {
         if (setValue === undefined || setValue.length !== value.length) {
             // clone array to store as cache
-            gl.renderer.state.uniformLocations.set(location, value.slice(0));
+            context.state.uniformLocations.set(location, value.slice(0));
         } else {
             if (arraysEqual(setValue, value)) return;
 
             // Update cached array values
             setValue.set ? setValue.set(value) : setArray(setValue, value);
-            gl.renderer.state.uniformLocations.set(location, setValue);
+            context.state.uniformLocations.set(location, setValue);
         }
     } else {
         if (setValue === value) return;
-        gl.renderer.state.uniformLocations.set(location, value);
+        context.state.uniformLocations.set(location, value);
     }
 
     switch (type) {
