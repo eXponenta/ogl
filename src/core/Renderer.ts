@@ -223,7 +223,6 @@ export class Renderer {
     }
 
     bindVertexArray(vao: WebGLVertexArrayObject) {
-
         // allow to rebound buffer to vao
         if (vao) this.state.boundBuffer = null;
 
@@ -253,17 +252,6 @@ export class Renderer {
     deleteBuffer(buffer: WebGLBuffer) {
         if (this.state.boundBuffer === buffer) this.state.boundBuffer = null;
         this.gl.deleteBuffer(buffer);
-    }
-
-    /**
-     * Guarded version for bindTexture
-     */
-
-    bindTexture(target: GLenum, texture: WebGLTexture) {
-        if (this.state.textureUnits[this.state.activeTextureUnit] === texture) return;
-
-        this.state.textureUnits[this.state.activeTextureUnit] = texture;
-        this.gl.bindTexture(target, texture);
     }
 
     setSize(width: number, height: number) {
@@ -358,6 +346,17 @@ export class Renderer {
         if (this.state.activeTextureUnit === value) return;
         this.state.activeTextureUnit = value;
         this.gl.activeTexture(this.gl.TEXTURE0 + value);
+    }
+
+    /**
+     * Guarded version for bindTexture
+     */
+    bindTexture(target: GLenum, texture: WebGLTexture, unit = this.state.activeTextureUnit) {
+        if (this.state.textureUnits[unit] === texture) return;
+        this.state.textureUnits[unit] = texture;
+
+        this.activeTexture(unit);
+        this.gl.bindTexture(target, texture);
     }
 
     bindFramebuffer({ target = this.gl.FRAMEBUFFER, buffer = null } = {}) {

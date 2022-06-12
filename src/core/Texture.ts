@@ -162,7 +162,7 @@ export class Texture<T extends IImageSource = null> implements INativeObjectHold
      * Attach renderer context to current texture and prepare (bind, upload) for rendering
      * @returns
      */
-    prepare ({ context }): void {
+    prepare ({ context } : { context: Renderer }): void {
         if (!this.texture) {
             this.texture = context.gl.createTexture();
         }
@@ -172,10 +172,7 @@ export class Texture<T extends IImageSource = null> implements INativeObjectHold
             return;
         }
 
-        context.bindTexture(this.target, this.texture);
-
         const needsUpdate = !(this.image === this.store.image && !this.needsUpdate) || this.activeContext !== context;
-
         if (needsUpdate) {
             this.upload(context);
         }
@@ -193,8 +190,11 @@ export class Texture<T extends IImageSource = null> implements INativeObjectHold
         }
 
         this.textureUnit = textureUnit;
-        this.activeContext.activeTexture(this.textureUnit);
-        this.activeContext.bindTexture(this.target, this.texture);
+        this.activeContext.bindTexture(
+            this.target,
+            this.texture,
+            this.textureUnit
+        );
     }
 
     /**

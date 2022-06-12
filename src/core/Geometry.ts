@@ -17,7 +17,6 @@
 // TODO: fit in transform feedback
 import { Program } from './Program.js';
 import { GLContext, GL_ENUMS, INativeObjectHolder, Renderer } from './Renderer.js';
-import { RenderState } from './State.js';
 import { nextUUID } from './uuid.js';
 
 import { Vec3 } from '../math/Vec3.js';
@@ -33,7 +32,8 @@ export interface IGeometryAttribute {
     id: number;
     size: number;
     type: GLenum;
-    data: Uint16Array | Float32Array;
+    rawData: ArrayBuffer;
+    data: Uint16Array | Uint32Array | Float32Array;
     target: GLenum;
     usage: GLenum;
     normalized: boolean;
@@ -111,7 +111,7 @@ export class Geometry<T extends string = any> implements INativeObjectHolder {
         attr.offset = attr.offset || 0;
         attr.count = attr.count || (attr.stride ? attr.data.byteLength / attr.stride : attr.data.length / attr.size);
         attr.divisor = attr.instanced || 0;
-        attr.needsUpdate = true;
+        attr.needsUpdate = !attr.buffer;
         attr.usage = attr.usage || GL_ENUMS.STATIC_DRAW;
 
         // Update geometry counts. If indexed, ignore regular attributes
@@ -129,21 +129,25 @@ export class Geometry<T extends string = any> implements INativeObjectHolder {
         }
     }
 
-    updateAttribute(context: Renderer, attr: IGeometryAttributeInit) {
+    private updateAttribute(context: Renderer, attr: IGeometryAttributeInit, forceBind = false) {
         const isNewBuffer = !attr.buffer;
+        const needUpdate = isNewBuffer || attr.needsUpdate;
+
         if (isNewBuffer) attr.buffer = context.gl.createBuffer();
 
+        if (needUpdate || forceBind) {
+            context.bindBuffer(attr.target, attr.buffer);
+        }
+
         // skip update
-        if (!(isNewBuffer || attr.needsUpdate)) {
+        if (!needUpdate) {
             return;
         }
 
-        context.bindBuffer(attr.target, attr.buffer);
-
         if (isNewBuffer) {
-            context.gl.bufferData(attr.target, attr.data, attr.usage);
+            context.gl.bufferData(attr.target, attr.rawData ?? attr.data, attr.usage);
         } else {
-            context.gl.bufferSubData(attr.target, 0, attr.data);
+            context.gl.bufferSubData(attr.target, 0, attr.rawData ?? attr.data);
         }
 
         attr.needsUpdate = false;
@@ -162,7 +166,7 @@ export class Geometry<T extends string = any> implements INativeObjectHolder {
         this.instancedCount = value;
     }
 
-    createVAO(context: Renderer, program: Program) {
+    private createVAO(context: Renderer, program: Program) {
         this.VAOs[program.attributeOrder] = context.createVertexArray();
 
         context.bindVertexArray(this.VAOs[program.attributeOrder]);
@@ -170,7 +174,7 @@ export class Geometry<T extends string = any> implements INativeObjectHolder {
         this.bindAttributes(context, program);
     }
 
-    bindAttributes(context: Renderer, program: Program) {
+    private bindAttributes(context: Renderer, program: Program) {
         const { gl } = context;
 
         // Link all attributes to program using gl.vertexAttribPointer
@@ -181,9 +185,9 @@ export class Geometry<T extends string = any> implements INativeObjectHolder {
                 return;
             }
 
-            const attr = this.attributes[name];
+            const attr = <IGeometryAttribute>this.attributes[name];
 
-            this.updateAttribute(context, attr);
+            this.updateAttribute(context, attr, true);
 
             // For matrix attributes, buffer needs to be defined per column
             let numLoc = 1;
@@ -196,7 +200,14 @@ export class Geometry<T extends string = any> implements INativeObjectHolder {
             const offset = numLoc === 1 ? 0 : numLoc * numLoc;
 
             for (let i = 0; i < numLoc; i++) {
-                gl.vertexAttribPointer(location + i, size, attr.type, attr.normalized, attr.stride + stride, attr.offset + i * offset);
+                gl.vertexAttribPointer(
+                    location + i,
+                    size,
+                    attr.type,
+                    attr.normalized,
+                    attr.stride + stride,
+                    attr.offset + i * offset
+                );
                 gl.enableVertexAttribArray(location + i);
 
                 // For instanced attributes, divisor needs to be set.
@@ -206,9 +217,7 @@ export class Geometry<T extends string = any> implements INativeObjectHolder {
         });
 
         if (this.attributes.index) {
-            this.updateAttribute(context, this.attributes.index);
-
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.attributes.index.buffer);
+            this.updateAttribute(context, this.attributes.index, true);
         }
     }
 
