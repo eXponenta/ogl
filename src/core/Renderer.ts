@@ -1,6 +1,6 @@
 import type { Transform } from './Transform.js';
 import type { Camera } from './Camera.js';
-import type { RenderTarget  } from './RenderTarget.js';
+import type { RenderTarget } from './RenderTarget.js';
 import { RenderState } from './State.js';
 import { nextUUID } from './uuid.js';
 
@@ -25,7 +25,7 @@ export interface INativeObjectHolder extends IDisposable {
     /**
      * Called when object is used for specific render process
      */
-    prepare (args: { context: Renderer, camera: Camera }): void;
+    prepare(args: { context: Renderer; camera: Camera }): void;
 }
 
 export interface ISortable {
@@ -34,7 +34,7 @@ export interface ISortable {
     renderOrder: number;
     program: {
         id: number;
-    }
+    };
 }
 
 type ISortedTraversable = Transform & ISortable & INativeObjectHolder;
@@ -44,26 +44,20 @@ export interface IDrawable extends ISortedTraversable {
         id: number;
         transparent: boolean;
         depthTest: boolean;
-    }
+    };
 
-    draw (args: { camera: Camera, context: Renderer }): void;
+    draw(args: { camera: Camera; context: Renderer }): void;
 }
 
-export interface IRendererInit {
+export interface IRendererInit extends WebGLContextAttributes {
     canvas: HTMLCanvasElement;
+    context?: GLContext;
     width: number;
     height: number;
     dpr: number;
-
-    alpha: boolean;
-    depth: boolean;
-    stencil: boolean;
-    antialias: boolean;
-    premultipliedAlpha: boolean;
-    preserveDrawingBuffer: boolean;
-    powerPreference: 'default' | 'high-performance';
     autoClear: boolean;
     webgl: 1 | 2;
+    frustumCull?: boolean;
 }
 
 export interface IRenderOptions {
@@ -89,6 +83,7 @@ export class Renderer {
     public stencil: boolean;
     public premultipliedAlpha: boolean;
     public autoClear: boolean;
+    public frustumCull: boolean;
 
     public width: number = 0;
     public height: number = 0;
@@ -111,7 +106,8 @@ export class Renderer {
     currentGeometry: string;
 
     constructor({
-        canvas = document.createElement('canvas'),
+        context,
+        canvas,
         width = 300,
         height = 150,
         dpr = 1,
@@ -124,6 +120,7 @@ export class Renderer {
         powerPreference = 'default',
         autoClear = true,
         webgl = 2,
+        frustumCull = true
     }: Partial<IRendererInit> = {}) {
         const attributes: WebGLContextAttributes = {
             alpha,
@@ -132,7 +129,7 @@ export class Renderer {
             antialias,
             premultipliedAlpha,
             preserveDrawingBuffer,
-            powerPreference
+            powerPreference,
         };
 
         this.dpr = dpr;
@@ -142,13 +139,20 @@ export class Renderer {
         this.stencil = stencil;
         this.premultipliedAlpha = premultipliedAlpha;
         this.autoClear = autoClear;
+        this.frustumCull = frustumCull;
         this.id = nextUUID();
 
-        // Attempt WebGL2 unless forced to 1, if not supported fallback to WebGL1
-        if (webgl === 2) this.gl = canvas.getContext('webgl2', attributes);
-        this.isWebgl2 = !!this.gl;
-        if (!this.gl) this.gl = canvas.getContext('webgl', attributes);
-        if (!this.gl) console.error('unable to create webgl context');
+        if (!context) {
+            canvas = canvas || document.createElement('canvas');
+
+            // Attempt WebGL2 unless forced to 1, if not supported fallback to WebGL1
+            if (webgl === 2) context = canvas.getContext('webgl2', attributes);
+            if (!context) context = canvas.getContext('webgl', attributes);
+            if (!context) throw new Error('unable to create webgl context');
+        }
+
+        this.isWebgl2 = self.WebGL2RenderingContext && (context instanceof self.WebGL2RenderingContext);
+        this.gl = context;
 
         // Attach renderer to gl so that all classes have access to internal state functions
         this.gl.renderer = this;
@@ -201,19 +205,21 @@ export class Renderer {
             : 0;
     }
 
-    vertexAttribDivisor(...params: Parameters<WebGL2RenderingContext['vertexAttribDivisor']>) { };
+    vertexAttribDivisor(...params: Parameters<WebGL2RenderingContext['vertexAttribDivisor']>) {}
 
-    drawArraysInstanced(...params: Parameters<WebGL2RenderingContext['drawArraysInstanced']>) { };
+    drawArraysInstanced(...params: Parameters<WebGL2RenderingContext['drawArraysInstanced']>) {}
 
-    drawElementsInstanced(...params: Parameters<WebGL2RenderingContext['drawElementsInstanced']>) { };
+    drawElementsInstanced(...params: Parameters<WebGL2RenderingContext['drawElementsInstanced']>) {}
 
-    _createVertexArray(...params: Parameters<WebGL2RenderingContext['createVertexArray']>): WebGLVertexArrayObject { return null };
+    _createVertexArray(...params: Parameters<WebGL2RenderingContext['createVertexArray']>): WebGLVertexArrayObject {
+        return null;
+    }
 
-    _bindVertexArray(...params: Parameters<WebGL2RenderingContext['bindVertexArray']>) { };
+    _bindVertexArray(...params: Parameters<WebGL2RenderingContext['bindVertexArray']>) {}
 
-    _deleteVertexArray(...params: Parameters<WebGL2RenderingContext['deleteVertexArray']>) { };
+    _deleteVertexArray(...params: Parameters<WebGL2RenderingContext['deleteVertexArray']>) {}
 
-    drawBuffers(...params: Parameters<WebGL2RenderingContext['drawBuffers']>) { };
+    drawBuffers(...params: Parameters<WebGL2RenderingContext['drawBuffers']>) {}
 
     /**
      * Guarded version for valid VAO state
@@ -246,7 +252,7 @@ export class Renderer {
         if (this.state.boundBuffer === buffer) return;
 
         this.state.boundBuffer = buffer;
-        this.gl.bindBuffer(target, buffer)
+        this.gl.bindBuffer(target, buffer);
     }
 
     deleteBuffer(buffer: WebGLBuffer) {
@@ -261,10 +267,12 @@ export class Renderer {
         this.gl.canvas.width = width * this.dpr;
         this.gl.canvas.height = height * this.dpr;
 
-        Object.assign(this.gl.canvas.style, {
+        // Offscreen canvas not has style
+        Object.assign(this.gl.canvas.style || {}, {
             width: width + 'px',
             height: height + 'px',
         });
+
     }
 
     setViewport(width: number, height: number, x = 0, y = 0) {
@@ -476,7 +484,7 @@ export class Renderer {
         target = null,
         update = true,
         sort = true,
-        frustumCull = true,
+        frustumCull = this.frustumCull,
         clear
     }: IRenderOptions) {
         if (target === null) {
@@ -514,14 +522,10 @@ export class Renderer {
 
         const props = { camera, context: this };
 
-        // first pass - prepare
-        renderList.forEach((node) => {
-            node.prepare(props);
-        })
+        // prepare state
+        for(const node of renderList) node.prepare(props);
 
-        // second - render
-        renderList.forEach((node) => {
-            node.draw(props);
-        });
+        // draw state
+        for(const node of renderList) node.draw(props);
     }
 }

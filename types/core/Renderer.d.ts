@@ -33,20 +33,15 @@ export interface IDrawable extends ISortedTraversable {
         context: Renderer;
     }): void;
 }
-export interface IRendererInit {
+export interface IRendererInit extends WebGLContextAttributes {
     canvas: HTMLCanvasElement;
+    context?: GLContext;
     width: number;
     height: number;
     dpr: number;
-    alpha: boolean;
-    depth: boolean;
-    stencil: boolean;
-    antialias: boolean;
-    premultipliedAlpha: boolean;
-    preserveDrawingBuffer: boolean;
-    powerPreference: 'default' | 'high-performance';
     autoClear: boolean;
     webgl: 1 | 2;
+    frustumCull?: boolean;
 }
 export interface IRenderOptions {
     scene: Transform;
@@ -69,6 +64,7 @@ export declare class Renderer {
     stencil: boolean;
     premultipliedAlpha: boolean;
     autoClear: boolean;
+    frustumCull: boolean;
     width: number;
     height: number;
     readonly id: number;
@@ -81,7 +77,7 @@ export declare class Renderer {
      * @deprecated
      */
     currentGeometry: string;
-    constructor({ canvas, width, height, dpr, alpha, depth, stencil, antialias, premultipliedAlpha, preserveDrawingBuffer, powerPreference, autoClear, webgl, }?: Partial<IRendererInit>);
+    constructor({ context, canvas, width, height, dpr, alpha, depth, stencil, antialias, premultipliedAlpha, preserveDrawingBuffer, powerPreference, autoClear, webgl, frustumCull }?: Partial<IRendererInit>);
     vertexAttribDivisor(...params: Parameters<WebGL2RenderingContext['vertexAttribDivisor']>): void;
     drawArraysInstanced(...params: Parameters<WebGL2RenderingContext['drawArraysInstanced']>): void;
     drawElementsInstanced(...params: Parameters<WebGL2RenderingContext['drawElementsInstanced']>): void;

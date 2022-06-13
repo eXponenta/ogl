@@ -13,7 +13,7 @@ const tempVec3 = new Vec3();
 // sorry SSR =)
 export const GL_ENUMS = (self.WebGL2RenderingContext || WebGLRenderingContext).prototype;
 export class Renderer {
-    constructor({ canvas = document.createElement('canvas'), width = 300, height = 150, dpr = 1, alpha = false, depth = true, stencil = false, antialias = false, premultipliedAlpha = false, preserveDrawingBuffer = false, powerPreference = 'default', autoClear = true, webgl = 2, } = {}) {
+    constructor({ context, canvas, width = 300, height = 150, dpr = 1, alpha = false, depth = true, stencil = false, antialias = false, premultipliedAlpha = false, preserveDrawingBuffer = false, powerPreference = 'default', autoClear = true, webgl = 2, frustumCull = true } = {}) {
         this.width = 0;
         this.height = 0;
         const attributes = {
@@ -23,7 +23,7 @@ export class Renderer {
             antialias,
             premultipliedAlpha,
             preserveDrawingBuffer,
-            powerPreference
+            powerPreference,
         };
         this.dpr = dpr;
         this.alpha = alpha;
@@ -32,15 +32,20 @@ export class Renderer {
         this.stencil = stencil;
         this.premultipliedAlpha = premultipliedAlpha;
         this.autoClear = autoClear;
+        this.frustumCull = frustumCull;
         this.id = nextUUID();
-        // Attempt WebGL2 unless forced to 1, if not supported fallback to WebGL1
-        if (webgl === 2)
-            this.gl = canvas.getContext('webgl2', attributes);
-        this.isWebgl2 = !!this.gl;
-        if (!this.gl)
-            this.gl = canvas.getContext('webgl', attributes);
-        if (!this.gl)
-            console.error('unable to create webgl context');
+        if (!context) {
+            canvas = canvas || document.createElement('canvas');
+            // Attempt WebGL2 unless forced to 1, if not supported fallback to WebGL1
+            if (webgl === 2)
+                context = canvas.getContext('webgl2', attributes);
+            if (!context)
+                context = canvas.getContext('webgl', attributes);
+            if (!context)
+                throw new Error('unable to create webgl context');
+        }
+        this.isWebgl2 = self.WebGL2RenderingContext && (context instanceof self.WebGL2RenderingContext);
+        this.gl = context;
         // Attach renderer to gl so that all classes have access to internal state functions
         this.gl.renderer = this;
         // initialise size values
@@ -85,19 +90,14 @@ export class Renderer {
             : 0;
     }
     vertexAttribDivisor(...params) { }
-    ;
     drawArraysInstanced(...params) { }
-    ;
     drawElementsInstanced(...params) { }
-    ;
-    _createVertexArray(...params) { return null; }
-    ;
+    _createVertexArray(...params) {
+        return null;
+    }
     _bindVertexArray(...params) { }
-    ;
     _deleteVertexArray(...params) { }
-    ;
     drawBuffers(...params) { }
-    ;
     /**
      * Guarded version for valid VAO state
      */
@@ -138,7 +138,8 @@ export class Renderer {
         this.height = height;
         this.gl.canvas.width = width * this.dpr;
         this.gl.canvas.height = height * this.dpr;
-        Object.assign(this.gl.canvas.style, {
+        // Offscreen canvas not has style
+        Object.assign(this.gl.canvas.style || {}, {
             width: width + 'px',
             height: height + 'px',
         });
@@ -339,7 +340,7 @@ export class Renderer {
         }
         return renderList;
     }
-    render({ scene, camera = null, target = null, update = true, sort = true, frustumCull = true, clear }) {
+    render({ scene, camera = null, target = null, update = true, sort = true, frustumCull = this.frustumCull, clear }) {
         var _a;
         if (target === null) {
             // make sure no render target bound so draws to canvas
@@ -371,13 +372,11 @@ export class Renderer {
         // Get render list - entails culling and sorting
         const renderList = this.getRenderList({ scene, camera, frustumCull, sort });
         const props = { camera, context: this };
-        // first pass - prepare
-        renderList.forEach((node) => {
+        // prepare state
+        for (const node of renderList)
             node.prepare(props);
-        });
-        // second - render
-        renderList.forEach((node) => {
+        // draw state
+        for (const node of renderList)
             node.draw(props);
-        });
     }
 }
