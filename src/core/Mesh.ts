@@ -1,6 +1,6 @@
 import { Program } from './Program.js';
 import { Transform } from './Transform.js';
-import type { GLContext, IDrawable, Renderer } from './Renderer.js';
+import { GLContext, GL_ENUMS, IDrawable, Renderer } from './Renderer.js';
 import { Geometry } from './Geometry.js';
 
 import { Mat3 } from '../math/Mat3.js';
@@ -19,6 +19,9 @@ export interface IMeshInit<G extends Geometry = Geometry, P extends Program = Pr
 export type IRenderCallback = (args: { mesh: Mesh<any, any>, camera?: Camera }) => void;
 
 export class Mesh<G extends Geometry = Geometry, P extends Program = Program> extends Transform implements IDrawable {
+    /**
+     * @deprecated always null, not use it
+     */
     public readonly gl: GLContext;
     public readonly id: number;
     public geometry: G;
@@ -37,16 +40,14 @@ export class Mesh<G extends Geometry = Geometry, P extends Program = Program> ex
 
     activeContext: Renderer;
 
-    constructor(gl: GLContext, {
+    constructor(_gl: GLContext, {
         geometry,
         program,
-        mode = gl.TRIANGLES,
+        mode =GL_ENUMS.TRIANGLES,
         frustumCulled = true,
         renderOrder = 0
     }: IMeshInit<G, P>) {
         super();
-        if (!gl.canvas) console.error('gl not passed as first argument to Mesh');
-        this.gl = gl;
         this.id = nextUUID();
         this.geometry = geometry;
         this.program = program;
