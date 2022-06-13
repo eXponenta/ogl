@@ -106,10 +106,15 @@ export class Program {
             }
         }
         if (this.blendFunc.src == null) {
-            if (context.premultipliedAlpha)
-                this.setBlendFunc(GL_ENUMS.ONE, GL_ENUMS.ONE_MINUS_SRC_ALPHA);
-            else
-                this.setBlendFunc(GL_ENUMS.SRC_ALPHA, GL_ENUMS.ONE_MINUS_SRC_ALPHA);
+            if (this.transparent) {
+                if (context.premultipliedAlpha)
+                    this.setBlendFunc(GL_ENUMS.ONE, GL_ENUMS.ONE_MINUS_SRC_ALPHA);
+                else
+                    this.setBlendFunc(GL_ENUMS.SRC_ALPHA, GL_ENUMS.ONE_MINUS_SRC_ALPHA);
+            }
+            else {
+                this.setBlendFunc(GL_ENUMS.ZERO, GL_ENUMS.ONE);
+            }
         }
         this.activeContext = context;
     }

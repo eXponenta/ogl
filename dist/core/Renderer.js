@@ -340,12 +340,14 @@ export class Renderer {
         return renderList;
     }
     render({ scene, camera = null, target = null, update = true, sort = true, frustumCull = true, clear }) {
+        var _a;
         if (target === null) {
             // make sure no render target bound so draws to canvas
             this.bindFramebuffer();
             this.setViewport(this.width * this.dpr, this.height * this.dpr);
         }
         else {
+            (_a = target.prepare) === null || _a === void 0 ? void 0 : _a.call(target, { context: this, camera });
             // bind supplied render target and update viewport
             this.bindFramebuffer(target);
             this.setViewport(target.width, target.height);
