@@ -484,6 +484,7 @@ export class Renderer {
             this.bindFramebuffer();
             this.setViewport(this.width * this.dpr, this.height * this.dpr);
         } else {
+            target.prepare?.({ context: this, camera });
             // bind supplied render target and update viewport
             this.bindFramebuffer(target);
             this.setViewport(target.width, target.height);
