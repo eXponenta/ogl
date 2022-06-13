@@ -3,11 +3,16 @@ import { Program } from '../core/Program.js';
 import { Mesh } from '../core/Mesh.js';
 import { RenderTarget } from '../core/RenderTarget.js';
 import { Triangle } from './Triangle.js';
+import { GL_ENUMS, Renderer } from '../core/Renderer.js';
+import { GL } from '../core/State.js';
 export class Post {
-    constructor(gl, { width = undefined, height = undefined, dpr = undefined, wrapS = gl.CLAMP_TO_EDGE, wrapT = gl.CLAMP_TO_EDGE, minFilter = gl.LINEAR, magFilter = gl.LINEAR, geometry = new Triangle(gl), targetOnly = null, } = {}) {
+    constructor(context, { width = undefined, height = undefined, dpr = undefined, wrapS = GL_ENUMS.CLAMP_TO_EDGE, wrapT = GL.CLAMP_TO_EDGE, minFilter = GL_ENUMS.LINEAR, magFilter = GL.LINEAR, geometry = new Triangle(null), targetOnly = null, } = {}) {
         this.passes = [];
         this.uniform = { value: null };
-        this.gl = gl;
+        if (!(context instanceof Renderer)) {
+            console.warn('[Post deprecation] You should pass instance of renderer instead of gl as argument');
+        }
+        this.activeContext = context instanceof Renderer ? context : context.renderer;
         this.options = { wrapS, wrapT, minFilter, magFilter, width, height };
         this.geometry = geometry;
         this.targetOnly = targetOnly;
@@ -24,8 +29,8 @@ export class Post {
     }
     addPass({ vertex = defaultVertex, fragment = defaultFragment, uniforms = {}, textureUniform = 'tMap', enabled = true } = {}) {
         uniforms[textureUniform] = { value: this.fbo.read.texture };
-        const program = new Program(this.gl, { vertex, fragment, uniforms });
-        const mesh = new Mesh(this.gl, { geometry: this.geometry, program });
+        const program = new Program(null, { vertex, fragment, uniforms });
+        const mesh = new Mesh(null, { geometry: this.geometry, program });
         const pass = {
             mesh,
             program,
@@ -43,19 +48,25 @@ export class Post {
             this.width = width;
             this.height = height || width;
         }
-        dpr = this.dpr || this.gl.renderer.dpr;
-        width = Math.floor((this.width || this.gl.renderer.width) * dpr);
-        height = Math.floor((this.height || this.gl.renderer.height) * dpr);
+        dpr = this.dpr || this.activeContext.dpr;
+        width = Math.floor((this.width || this.activeContext.width) * dpr);
+        height = Math.floor((this.height || this.activeContext.height) * dpr);
         this.options.width = width;
         this.options.height = height;
-        this.fbo.read = new RenderTarget(this.gl, this.options);
-        this.fbo.write = new RenderTarget(this.gl, this.options);
+        if (!this.fbo.read) {
+            this.fbo.read = new RenderTarget(null, this.options);
+            this.fbo.write = new RenderTarget(null, this.options);
+        }
+        {
+            this.fbo.read.setSize(width, height);
+            this.fbo.write.setSize(width, height);
+        }
     }
     // Uses same arguments as renderer.render, with addition of optional texture passed in to avoid scene render
-    render({ scene, camera, texture, target = null, update = true, sort = true, frustumCull = true }) {
+    render({ scene, camera, texture, target = null, update = true, sort = true, frustumCull }) {
         const enabledPasses = this.passes.filter((pass) => pass.enabled);
         if (!texture) {
-            this.gl.renderer.render({
+            this.activeContext.render({
                 scene,
                 camera,
                 target: enabledPasses.length || (!target && this.targetOnly) ? this.fbo.write : target,
@@ -67,7 +78,7 @@ export class Post {
         }
         enabledPasses.forEach((pass, i) => {
             pass.mesh.program.uniforms[pass.textureUniform].value = !i && texture ? texture : this.fbo.read.texture;
-            this.gl.renderer.render({
+            this.activeContext.render({
                 scene: pass.mesh,
                 target: i === enabledPasses.length - 1 && (target || !this.targetOnly) ? target : this.fbo.write,
                 clear: true,

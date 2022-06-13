@@ -1,6 +1,6 @@
 import { Program } from './Program.js';
 import { Transform } from './Transform.js';
-import type { GLContext, IDrawable, Renderer } from './Renderer.js';
+import { GLContext, IDrawable, Renderer } from './Renderer.js';
 import { Geometry } from './Geometry.js';
 import type { Camera } from './Camera.js';
 export interface IMeshInit<G extends Geometry = Geometry, P extends Program = Program> {
@@ -15,6 +15,9 @@ export declare type IRenderCallback = (args: {
     camera?: Camera;
 }) => void;
 export declare class Mesh<G extends Geometry = Geometry, P extends Program = Program> extends Transform implements IDrawable {
+    /**
+     * @deprecated always null, not use it
+     */
     readonly gl: GLContext;
     readonly id: number;
     geometry: G;
@@ -28,7 +31,7 @@ export declare class Mesh<G extends Geometry = Geometry, P extends Program = Pro
     private afterRenderCallbacks;
     private flipFaces;
     activeContext: Renderer;
-    constructor(gl: GLContext, { geometry, program, mode, frustumCulled, renderOrder }: IMeshInit<G, P>);
+    constructor(_gl: GLContext, { geometry, program, mode, frustumCulled, renderOrder }: IMeshInit<G, P>);
     onBeforeRender(f: IRenderCallback): this;
     onAfterRender(f: IRenderCallback): this;
     prepare({ context, camera }: {

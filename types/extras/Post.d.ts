@@ -1,7 +1,7 @@
 import { Program } from '../core/Program.js';
 import { Mesh } from '../core/Mesh.js';
 import { RenderTarget } from '../core/RenderTarget.js';
-import type { GLContext } from '../core/Renderer.js';
+import { GLContext, Renderer } from '../core/Renderer.js';
 import type { Geometry } from '../core/Geometry.js';
 export interface IPostInit {
     width: number;
@@ -38,7 +38,12 @@ export interface ISwapChain {
     swap(): void;
 }
 export declare class Post {
+    /**
+     * @deprecated, always null, not use it. use activeContext instead
+     *
+     */
     readonly gl: GLContext;
+    readonly activeContext: Renderer;
     readonly options: {
         wrapS: GLenum;
         wrapT: GLenum;
@@ -55,7 +60,7 @@ export declare class Post {
     dpr: number;
     private uniform;
     private fbo;
-    constructor(gl: GLContext, { width, height, dpr, wrapS, wrapT, minFilter, magFilter, geometry, targetOnly, }?: Partial<IPostInit>);
+    constructor(context: GLContext | Renderer, { width, height, dpr, wrapS, wrapT, minFilter, magFilter, geometry, targetOnly, }?: Partial<IPostInit>);
     addPass({ vertex, fragment, uniforms, textureUniform, enabled }?: Partial<IRenderPassInit>): {
         mesh: Mesh<Geometry<any>, Program<string>>;
         program: Program<string>;
@@ -77,6 +82,6 @@ export declare class Post {
         target?: any;
         update?: boolean;
         sort?: boolean;
-        frustumCull?: boolean;
+        frustumCull: any;
     }): void;
 }

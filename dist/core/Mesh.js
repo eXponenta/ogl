@@ -1,18 +1,16 @@
 import { Transform } from './Transform.js';
+import { GL_ENUMS } from './Renderer.js';
 import { Mat3 } from '../math/Mat3.js';
 import { Mat4 } from '../math/Mat4.js';
 import { nextUUID } from './uuid.js';
 export class Mesh extends Transform {
-    constructor(gl, { geometry, program, mode = gl.TRIANGLES, frustumCulled = true, renderOrder = 0 }) {
+    constructor(_gl, { geometry, program, mode = GL_ENUMS.TRIANGLES, frustumCulled = true, renderOrder = 0 }) {
         super();
         this.modelViewMatrix = new Mat4();
         this.normalMatrix = new Mat3();
         this.beforeRenderCallbacks = [];
         this.afterRenderCallbacks = [];
         this.flipFaces = false;
-        if (!gl.canvas)
-            console.error('gl not passed as first argument to Mesh');
-        this.gl = gl;
         this.id = nextUUID();
         this.geometry = geometry;
         this.program = program;
