@@ -3,9 +3,9 @@ Not needs pass GL to constructor argument.
 
 ## No immediate instance for GL objects
 
-Because gl not passed to constructor, we can't instance native object in constructor
+Because gl not passed to constructor, we can't instantiate native object in constructor.
 
-Now there are `prepare` step that called each use of OGL Object. Only in this step native elements SHOULD BE spawned and updated: renderbuffers/textures/arrays .
+Now there are `prepare` step that called each use of OGL Object. Only in this step native elements SHOULD BE spawned and updated: renderbuffers/textures/arrays.
 
 ## Separate preparation and draw
 
