@@ -18,12 +18,15 @@ export interface IShadowPassInit {
     uniformTexture?: string;
 }
 export declare class Shadow {
+    /**
+     * @deprecated Not used yet
+     */
     readonly gl: GLContext;
     light: Camera;
     target: RenderTarget;
     private depthProgram;
     private castMeshes;
-    constructor(gl: GLContext, { light, width, height }: {
+    constructor(_gl: GLContext, { light, width, height }: {
         light?: Camera;
         width?: number;
         height?: any;

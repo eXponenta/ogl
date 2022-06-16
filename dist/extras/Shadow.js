@@ -2,12 +2,11 @@ import { Camera } from '../core/Camera.js';
 import { Program } from '../core/Program.js';
 import { RenderTarget } from '../core/RenderTarget.js';
 export class Shadow {
-    constructor(gl, { light = new Camera(gl), width = 1024, height = width }) {
+    constructor(_gl, { light = new Camera(null), width = 1024, height = width }) {
         this.castMeshes = [];
-        this.gl = gl;
         this.light = light;
-        this.target = new RenderTarget(gl, { width, height });
-        this.depthProgram = new Program(gl, {
+        this.target = new RenderTarget(null, { width, height });
+        this.depthProgram = new Program(null, {
             vertex: defaultVertex,
             fragment: defaultFragment,
             cullFace: null,

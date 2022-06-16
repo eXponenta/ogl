@@ -81,6 +81,7 @@ export declare class Texture<T extends IImageSource = null> implements INativeOb
      * Bind texture to slot, not prepare it. Only bind. For prepare use prepare
      */
     bind(textureUnit?: number): void;
+    setSize(width: number, height: number): void;
     /**
      * @deprecated
      * Only mark, not force upload.

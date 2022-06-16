@@ -348,7 +348,7 @@ export class Renderer {
             this.setViewport(this.width * this.dpr, this.height * this.dpr);
         }
         else {
-            (_a = target.prepare) === null || _a === void 0 ? void 0 : _a.call(target, { context: this, camera });
+            (_a = target.prepare) === null || _a === void 0 ? void 0 : _a.call(target, { context: this });
             // bind supplied render target and update viewport
             this.bindFramebuffer(target);
             this.setViewport(target.width, target.height);

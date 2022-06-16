@@ -37,7 +37,7 @@ export declare class Camera extends Transform implements ICamera {
     top?: number;
     bottom?: number;
     zoom?: number;
-    constructor(gl: any, { near, far, fov, aspect, left, right, bottom, top, zoom }?: Partial<IOrhoCameraInit & IPerspectiveCameraInit>);
+    constructor(_gl: any, { near, far, fov, aspect, left, right, bottom, top, zoom }?: Partial<IOrhoCameraInit & IPerspectiveCameraInit>);
     perspective({ near, far, fov, aspect }?: {
         near?: number;
         far?: number;

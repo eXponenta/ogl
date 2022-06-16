@@ -28,7 +28,7 @@ export class Post {
         this.resize({ width, height, dpr });
     }
     addPass({ vertex = defaultVertex, fragment = defaultFragment, uniforms = {}, textureUniform = 'tMap', enabled = true } = {}) {
-        uniforms[textureUniform] = { value: this.fbo.read.texture };
+        uniforms[textureUniform] = { value: null };
         const program = new Program(null, { vertex, fragment, uniforms });
         const mesh = new Mesh(null, { geometry: this.geometry, program });
         const pass = {
@@ -61,6 +61,8 @@ export class Post {
             this.fbo.read.setSize(width, height);
             this.fbo.write.setSize(width, height);
         }
+        this.fbo.read.prepare({ context: this.activeContext });
+        this.fbo.write.prepare({ context: this.activeContext });
     }
     // Uses same arguments as renderer.render, with addition of optional texture passed in to avoid scene render
     render({ scene, camera, texture, target = null, update = true, sort = true, frustumCull }) {

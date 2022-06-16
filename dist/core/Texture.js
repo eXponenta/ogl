@@ -65,7 +65,7 @@ export class Texture {
             // bug
             return;
         }
-        const needsUpdate = !(this.image === this.store.image && !this.needsUpdate) || this.activeContext !== context;
+        const needsUpdate = this.image !== this.store.image || this.needsUpdate || this.activeContext !== context;
         if (needsUpdate) {
             this.upload(context);
         }
@@ -81,6 +81,14 @@ export class Texture {
         }
         this.textureUnit = textureUnit;
         this.activeContext.bindTexture(this.target, this.texture, this.textureUnit);
+    }
+    setSize(width, height) {
+        if (this.image) {
+            return;
+        }
+        this.width = width;
+        this.height = height;
+        this.needsUpdate = true;
     }
     /**
      * @deprecated

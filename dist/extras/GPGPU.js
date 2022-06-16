@@ -3,13 +3,17 @@ import { Mesh } from '../core/Mesh.js';
 import { Texture } from '../core/Texture.js';
 import { RenderTarget } from '../core/RenderTarget.js';
 import { Triangle } from './Triangle.js';
+import { GL_ENUMS, Renderer } from '../core/Renderer.js';
 export class GPGPU {
-    constructor(gl, { 
+    constructor(context, { 
     // Always pass in array of vec4s (RGBA values within texture)
-    data = new Float32Array(16), geometry = new Triangle(gl), type = gl.HALF_FLOAT, // Pass in gl.FLOAT to force it, defaults to gl.HALF_FLOAT
+    data = new Float32Array(16), geometry = new Triangle(null), type = GL_ENUMS.HALF_FLOAT, // Pass in gl.FLOAT to force it, defaults to gl.HALF_FLOAT
      }) {
         this.passes = [];
-        this.gl = gl;
+        if (!(context instanceof Renderer)) {
+            console.warn('[Post deprecation] You should pass instance of renderer instead of gl as argument');
+        }
+        this.activeContext = context instanceof Renderer ? context : context.renderer;
         const initialData = data;
         this.geometry = geometry;
         this.dataLength = initialData.length / 4;
@@ -36,36 +40,36 @@ export class GPGPU {
         })();
         // Create output texture uniform using input float texture with initial data
         this.uniform = {
-            value: new Texture(gl, {
+            value: new Texture(null, {
                 image: floatArray,
-                target: gl.TEXTURE_2D,
-                type: gl.FLOAT,
-                format: gl.RGBA,
-                internalFormat: gl.renderer.isWebgl2 ? gl.RGBA32F : gl.RGBA,
-                wrapS: gl.CLAMP_TO_EDGE,
-                wrapT: gl.CLAMP_TO_EDGE,
+                target: GL_ENUMS.TEXTURE_2D,
+                type: GL_ENUMS.FLOAT,
+                format: GL_ENUMS.RGBA,
+                internalFormat: this.activeContext.isWebgl2 ? GL_ENUMS.RGBA32F : GL_ENUMS.RGBA,
+                wrapS: GL_ENUMS.CLAMP_TO_EDGE,
+                wrapT: GL_ENUMS.CLAMP_TO_EDGE,
                 generateMipmaps: false,
-                minFilter: gl.NEAREST,
-                magFilter: gl.NEAREST,
+                minFilter: GL_ENUMS.NEAREST,
+                magFilter: GL_ENUMS.NEAREST,
                 width: this.size,
                 flipY: false,
             }),
         };
-        type = type || gl.HALF_FLOAT || gl.renderer.extensions['OES_texture_half_float'].HALF_FLOAT_OES;
+        type = type || GL_ENUMS.HALF_FLOAT || this.activeContext.extensions['OES_texture_half_float'].HALF_FLOAT_OES;
         // Create FBOs
         const options = {
             width: this.size,
             height: this.size,
             type: type,
-            format: gl.RGBA,
-            internalFormat: gl.renderer.isWebgl2 ? (type === gl.FLOAT ? gl.RGBA32F : gl.RGBA16F) : gl.RGBA,
-            minFilter: gl.NEAREST,
+            format: GL_ENUMS.RGBA,
+            internalFormat: this.activeContext.isWebgl2 ? (type === GL_ENUMS.FLOAT ? GL_ENUMS.RGBA32F : GL_ENUMS.RGBA16F) : GL_ENUMS.RGBA,
+            minFilter: GL_ENUMS.NEAREST,
             depth: false,
             unpackAlignment: 1,
         };
         this.fbo = {
-            read: new RenderTarget(gl, options),
-            write: new RenderTarget(gl, options),
+            read: new RenderTarget(null, options),
+            write: new RenderTarget(null, options),
             swap: () => {
                 let temp = this.fbo.read;
                 this.fbo.read = this.fbo.write;
@@ -73,11 +77,14 @@ export class GPGPU {
                 this.uniform.value = this.fbo.read.texture;
             },
         };
+        this.uniform.value.prepare({ context: this.activeContext });
+        this.fbo.read.prepare({ context: this.activeContext });
+        this.fbo.write.prepare({ context: this.activeContext });
     }
     addPass({ vertex = defaultVertex, fragment = defaultFragment, uniforms = {}, textureUniform = 'tMap', enabled = true } = {}) {
         uniforms[textureUniform] = this.uniform;
-        const program = new Program(this.gl, { vertex, fragment, uniforms });
-        const mesh = new Mesh(this.gl, { geometry: this.geometry, program });
+        const program = new Program(null, { vertex, fragment, uniforms });
+        const mesh = new Mesh(null, { geometry: this.geometry, program });
         const pass = {
             mesh,
             program,
@@ -91,7 +98,7 @@ export class GPGPU {
     render() {
         const enabledPasses = this.passes.filter((pass) => pass.enabled);
         enabledPasses.forEach((pass, i) => {
-            this.gl.renderer.render({
+            this.activeContext.render({
                 scene: pass.mesh,
                 target: this.fbo.write,
                 clear: false,

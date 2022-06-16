@@ -43,7 +43,7 @@ export declare class Geometry<T extends string = any> implements INativeObjectHo
     instancedCount: number;
     isInstanced: boolean;
     bounds: IGeometryBounds;
-    raycast: string;
+    raycast: 'sphere' | 'box';
     activeContext: Renderer;
     constructor(_gl: GLContext, attributes?: Partial<Record<T, IGeometryAttributeInit>>);
     addAttribute(key: T | TDefaultAttributes, attr: IGeometryAttributeInit): number;
