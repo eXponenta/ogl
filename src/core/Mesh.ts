@@ -1,12 +1,13 @@
 import { Program } from './Program.js';
 import { Transform } from './Transform.js';
-import { GLContext, GL_ENUMS, IDrawable, Renderer } from './Renderer.js';
+import { GLContext, GL_ENUMS, Renderer } from './Renderer.js';
 import { Geometry } from './Geometry.js';
 
 import { Mat3 } from '../math/Mat3.js';
 import { Mat4 } from '../math/Mat4.js';
 import { nextUUID } from './uuid.js';
 import type { Camera } from './Camera.js';
+import type { IDrawable } from './RenderTask.js';
 
 export interface IMeshInit<G extends Geometry = Geometry, P extends Program = Program> {
     geometry: G;
