@@ -7,6 +7,7 @@ export { Transform } from './core/Transform.js';
 export { Mesh } from './core/Mesh.js';
 export { Texture } from './core/Texture.js';
 export { RenderTarget } from './core/RenderTarget.js';
+export { AbstractRenderTaskGroup, RenderTaskGroup } from './core/RenderTaskGroup.js';
 // Maths
 export { Color } from './math/Color.js';
 export { Euler } from './math/Euler.js';

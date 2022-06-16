@@ -1,8 +1,11 @@
 import { Program } from '../core/Program.js';
 import { Mesh } from '../core/Mesh.js';
 import { RenderTarget } from '../core/RenderTarget.js';
-import { GLContext, Renderer } from '../core/Renderer.js';
+import { GLContext, IRenderOptions, Renderer } from '../core/Renderer.js';
 import type { Geometry } from '../core/Geometry.js';
+import { AbstractRenderTaskGroup } from '../core/RenderTaskGroup.js';
+import { DefaultRenderTask } from '../core/RenderTask.js';
+import { Texture } from '../core/Texture.js';
 export interface IPostInit {
     width: number;
     height: number;
@@ -32,12 +35,15 @@ export interface IRenderPass {
     enabled: boolean;
     textureUniform: string;
 }
+export interface IPostOptions extends IRenderOptions {
+    texture: Texture<any>;
+}
 export interface ISwapChain {
     read: RenderTarget;
     write: RenderTarget;
     swap(): void;
 }
-export declare class Post {
+export declare class Post extends AbstractRenderTaskGroup {
     /**
      * @deprecated, always null, not use it. use activeContext instead
      *
@@ -60,6 +66,9 @@ export declare class Post {
     dpr: number;
     private uniform;
     private fbo;
+    private _enabledPasses;
+    private _postTask;
+    private _sceneOptions;
     constructor(context: GLContext | Renderer, { width, height, dpr, wrapS, wrapT, minFilter, magFilter, geometry, targetOnly, }?: Partial<IPostInit>);
     addPass({ vertex, fragment, uniforms, textureUniform, enabled }?: Partial<IRenderPassInit>): {
         mesh: Mesh<Geometry<any>, Program<string>>;
@@ -75,13 +84,14 @@ export declare class Post {
         height?: number;
         dpr?: number;
     }): void;
-    render({ scene, camera, texture, target, update, sort, frustumCull }: {
-        scene: any;
-        camera: any;
-        texture: any;
-        target?: any;
-        update?: boolean;
-        sort?: boolean;
-        frustumCull: any;
-    }): void;
+    setRenderOptions(options: IPostOptions): void;
+    /**
+     * @deprecated
+     * Use post as render task group
+     */
+    render(option: IPostOptions): void;
+    get renderTasks(): Iterable<DefaultRenderTask>;
+    [Symbol.iterator](): Generator<DefaultRenderTask, void, unknown>;
+    begin(context: Renderer): void;
+    finish(): void;
 }

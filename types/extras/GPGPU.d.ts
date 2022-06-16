@@ -4,7 +4,9 @@ import { Triangle } from './Triangle.js';
 import { GLContext, Renderer } from '../core/Renderer.js';
 import type { Geometry } from '../core/Geometry.js';
 import type { IRenderPass, IRenderPassInit } from './Post.js';
-export declare class GPGPU {
+import { AbstractRenderTaskGroup } from '../core/RenderTaskGroup.js';
+import { DefaultRenderTask } from '../core/RenderTask.js';
+export declare class GPGPU extends AbstractRenderTaskGroup {
     activeContext: Renderer;
     readonly passes: IRenderPass[];
     private geometry;
@@ -13,6 +15,8 @@ export declare class GPGPU {
     private coords;
     private uniform;
     private fbo;
+    private _enabledPasses;
+    private _task;
     constructor(context: GLContext | Renderer, { data, geometry, type, }: {
         data?: Float32Array;
         geometry?: Triangle;
@@ -27,5 +31,8 @@ export declare class GPGPU {
         enabled: boolean;
         textureUniform: string;
     };
-    render(): void;
+    get renderTasks(): Iterable<DefaultRenderTask>;
+    [Symbol.iterator](): Generator<DefaultRenderTask, void, unknown>;
+    begin(context: Renderer): void;
+    finish(): void;
 }

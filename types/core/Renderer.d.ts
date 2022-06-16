@@ -3,6 +3,8 @@ import type { Camera } from './Camera.js';
 import type { RenderTarget } from './RenderTarget.js';
 import { RenderState } from './State.js';
 import { IDisposable } from './IDisposable.js';
+import { DefaultRenderTask, AbstractRenderTask } from './RenderTask.js';
+import { AbstractRenderTaskGroup, RenderTaskGroup } from './RenderTaskGroup.js';
 export interface INativeObjectHolder extends IDisposable {
     activeContext: Renderer;
     /**
@@ -11,26 +13,6 @@ export interface INativeObjectHolder extends IDisposable {
     prepare(args: {
         context: Renderer;
         camera: Camera;
-    }): void;
-}
-export interface ISortable {
-    id: number;
-    zDepth: number;
-    renderOrder: number;
-    program: {
-        id: number;
-    };
-}
-declare type ISortedTraversable = Transform & ISortable & INativeObjectHolder;
-export interface IDrawable extends ISortedTraversable {
-    program: {
-        id: number;
-        transparent: boolean;
-        depthTest: boolean;
-    };
-    draw(args: {
-        camera: Camera;
-        context: Renderer;
     }): void;
 }
 export interface IRendererInit extends WebGLContextAttributes {
@@ -70,6 +52,8 @@ export declare class Renderer {
     readonly id: number;
     readonly gl: GLContext;
     readonly isWebgl2: boolean;
+    readonly renderGroups: AbstractRenderTaskGroup[];
+    readonly baseRenderTask: DefaultRenderTask;
     readonly state: RenderState;
     readonly extensions: Record<string, any>;
     parameters: Record<string, number>;
@@ -114,15 +98,11 @@ export declare class Renderer {
         buffer?: any;
     }): void;
     getExtension(extension: string, webgl2Func?: string, extFunc?: string): any;
-    sortOpaque(a: ISortable, b: ISortable): number;
-    sortTransparent(a: ISortable, b: ISortable): number;
-    sortUI(a: ISortable, b: ISortable): number;
-    getRenderList({ scene, camera, frustumCull, sort }: {
-        scene: any;
-        camera: any;
-        frustumCull: any;
-        sort: any;
-    }): IDrawable[];
-    render({ scene, camera, target, update, sort, frustumCull, clear }: IRenderOptions): void;
+    setRenderGroups(tasks: (DefaultRenderTask | RenderTaskGroup)[]): void;
+    render(options: IRenderOptions | AbstractRenderTask): void;
+    render(options: (IRenderOptions | AbstractRenderTask)[]): void;
+    render(group: AbstractRenderTaskGroup | AbstractRenderTaskGroup[]): void;
+    render(): void;
+    _executeRenderTask(run: AbstractRenderTask | IRenderOptions): void;
+    clear(target: RenderTarget): void;
 }
-export {};

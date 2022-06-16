@@ -5,10 +5,14 @@ import { RenderTarget } from '../core/RenderTarget.js';
 import { Triangle } from './Triangle.js';
 import { GL_ENUMS, Renderer } from '../core/Renderer.js';
 import { GL } from '../core/State.js';
-export class Post {
+import { AbstractRenderTaskGroup } from '../core/RenderTaskGroup.js';
+import { DefaultRenderTask } from '../core/RenderTask.js';
+export class Post extends AbstractRenderTaskGroup {
     constructor(context, { width = undefined, height = undefined, dpr = undefined, wrapS = GL_ENUMS.CLAMP_TO_EDGE, wrapT = GL.CLAMP_TO_EDGE, minFilter = GL_ENUMS.LINEAR, magFilter = GL.LINEAR, geometry = new Triangle(null), targetOnly = null, } = {}) {
+        super();
         this.passes = [];
         this.uniform = { value: null };
+        this._postTask = new DefaultRenderTask();
         if (!(context instanceof Renderer)) {
             console.warn('[Post deprecation] You should pass instance of renderer instead of gl as argument');
         }
@@ -64,30 +68,51 @@ export class Post {
         this.fbo.read.prepare({ context: this.activeContext });
         this.fbo.write.prepare({ context: this.activeContext });
     }
-    // Uses same arguments as renderer.render, with addition of optional texture passed in to avoid scene render
-    render({ scene, camera, texture, target = null, update = true, sort = true, frustumCull }) {
-        const enabledPasses = this.passes.filter((pass) => pass.enabled);
+    setRenderOptions(options) {
+        this._sceneOptions = options;
+    }
+    /**
+     * @deprecated
+     * Use post as render task group
+     */
+    render(option) {
+        this.setRenderOptions(option);
+        this.activeContext.render(this);
+    }
+    get renderTasks() {
+        return this;
+    }
+    *[Symbol.iterator]() {
+        const enabledPasses = this._enabledPasses;
+        const { target, texture } = this._sceneOptions;
         if (!texture) {
-            this.activeContext.render({
-                scene,
-                camera,
-                target: enabledPasses.length || (!target && this.targetOnly) ? this.fbo.write : target,
-                update,
-                sort,
-                frustumCull,
-            });
+            this._postTask.set(this._sceneOptions);
+            this._postTask.target = enabledPasses.length || (!target && this.targetOnly)
+                ? this.fbo.write
+                : target;
+            yield this._postTask;
             this.fbo.swap();
         }
-        enabledPasses.forEach((pass, i) => {
-            pass.mesh.program.uniforms[pass.textureUniform].value = !i && texture ? texture : this.fbo.read.texture;
-            this.activeContext.render({
+        for (let i = 0; i < enabledPasses.length; i++) {
+            const pass = enabledPasses[i];
+            pass.mesh.program.uniforms[pass.textureUniform].value = (!i && texture)
+                ? texture
+                : this.fbo.read.texture;
+            yield this._postTask.set({
                 scene: pass.mesh,
                 target: i === enabledPasses.length - 1 && (target || !this.targetOnly) ? target : this.fbo.write,
                 clear: true,
             });
             this.fbo.swap();
-        });
+        }
         this.uniform.value = this.fbo.read.texture;
+    }
+    begin(context) {
+        this.fbo.read.prepare({ context });
+        this.fbo.write.prepare({ context });
+        this._enabledPasses = this.passes.filter((pass) => pass.enabled);
+    }
+    finish() {
     }
 }
 const defaultVertex = /* glsl */ `

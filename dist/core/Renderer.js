@@ -1,21 +1,15 @@
 import { RenderState } from './State.js';
 import { nextUUID } from './uuid.js';
-import { Vec3 } from '../math/Vec3.js';
-// TODO: Handle context loss https://www.khronos.org/webgl/wiki/HandlingContextLost
-// Not automatic - devs to use these methods manually
-// gl.colorMask( colorMask, colorMask, colorMask, colorMask );
-// gl.clearColor( r, g, b, a );
-// gl.stencilMask( stencilMask );
-// gl.stencilFunc( stencilFunc, stencilRef, stencilMask );
-// gl.stencilOp( stencilFail, stencilZFail, stencilZPass );
-// gl.clearStencil( stencil );
-const tempVec3 = new Vec3();
+import { DefaultRenderTask } from './RenderTask.js';
+import { RenderTaskGroup } from './RenderTaskGroup.js';
 // sorry SSR =)
 export const GL_ENUMS = (self.WebGL2RenderingContext || WebGLRenderingContext).prototype;
 export class Renderer {
     constructor({ context, canvas, width = 300, height = 150, dpr = 1, alpha = false, depth = true, stencil = false, antialias = false, premultipliedAlpha = false, preserveDrawingBuffer = false, powerPreference = 'default', autoClear = true, webgl = 2, frustumCull = true } = {}) {
         this.width = 0;
         this.height = 0;
+        this.renderGroups = [];
+        this.baseRenderTask = new DefaultRenderTask();
         const attributes = {
             alpha,
             depth,
@@ -257,91 +251,46 @@ export class Renderer {
         // return extension function, bound to extension
         return this.extensions[extension][extFunc].bind(this.extensions[extension]);
     }
-    sortOpaque(a, b) {
-        if (a.renderOrder !== b.renderOrder) {
-            return a.renderOrder - b.renderOrder;
+    setRenderGroups(tasks) {
+        this.renderGroups.length = 0;
+        if (tasks[0].isRenderTask) {
+            this.renderGroups.push(new RenderTaskGroup(tasks));
         }
-        else if (a.program.id !== b.program.id) {
-            return a.program.id - b.program.id;
-        }
-        else if (a.zDepth !== b.zDepth) {
-            return a.zDepth - b.zDepth;
-        }
-        else {
-            return b.id - a.id;
-        }
+        this.renderGroups.push(...tasks);
     }
-    sortTransparent(a, b) {
-        if (a.renderOrder !== b.renderOrder) {
-            return a.renderOrder - b.renderOrder;
-        }
-        if (a.zDepth !== b.zDepth) {
-            return b.zDepth - a.zDepth;
-        }
-        else {
-            return b.id - a.id;
-        }
-    }
-    sortUI(a, b) {
-        if (a.renderOrder !== b.renderOrder) {
-            return a.renderOrder - b.renderOrder;
-        }
-        else if (a.program.id !== b.program.id) {
-            return a.program.id - b.program.id;
-        }
-        else {
-            return b.id - a.id;
-        }
-    }
-    getRenderList({ scene, camera, frustumCull, sort }) {
-        let renderList = [];
-        if (camera && frustumCull)
-            camera.updateFrustum();
-        // Get visible
-        scene.traverse((node) => {
-            if (!node.visible)
-                return true;
-            if (!node.draw)
-                return;
-            if (frustumCull && node.frustumCulled && camera) {
-                if (!camera.frustumIntersectsMesh(node))
-                    return;
+    render(tasks) {
+        let renderGroups = this.renderGroups;
+        if (tasks) {
+            if (!Array.isArray(tasks)) {
+                tasks = [tasks];
             }
-            renderList.push(node);
-        });
-        if (sort) {
-            const opaque = [];
-            const transparent = []; // depthTest true
-            const ui = []; // depthTest false
-            renderList.forEach((node) => {
-                // Split into the 3 render groups
-                if (!node.program.transparent) {
-                    opaque.push(node);
-                }
-                else if (node.program.depthTest) {
-                    transparent.push(node);
-                }
-                else {
-                    ui.push(node);
-                }
-                node.zDepth = 0;
-                // Only calculate z-depth if renderOrder unset and depthTest is true
-                if (node.renderOrder !== 0 || !node.program.depthTest || !camera)
-                    return;
-                // update z-depth
-                node.worldMatrix.getTranslation(tempVec3);
-                tempVec3.applyMatrix4(camera.projectionViewMatrix);
-                node.zDepth = tempVec3.z;
-            });
-            opaque.sort(this.sortOpaque);
-            transparent.sort(this.sortTransparent);
-            ui.sort(this.sortUI);
-            renderList = opaque.concat(transparent, ui);
+            // is render group
+            if (tasks[0].iRenderGroup) {
+                renderGroups = tasks;
+            }
+            else if (tasks) {
+                // render task as arrays
+                for (const t of tasks)
+                    this._executeRenderTask(t);
+            }
         }
-        return renderList;
+        // if not external task - run base group
+        for (const group of renderGroups) {
+            group.begin(this);
+            const tasks = group.renderTasks;
+            for (const task of tasks) {
+                this._executeRenderTask(task);
+            }
+            group.finish();
+        }
     }
-    render({ scene, camera = null, target = null, update = true, sort = true, frustumCull = this.frustumCull, clear }) {
+    _executeRenderTask(run) {
         var _a;
+        const task = run.isRenderTask
+            ? run
+            : this.baseRenderTask.set(run);
+        const needUpdate = task.begin(this);
+        const { target, clear, scene, camera } = task;
         if (target === null) {
             // make sure no render target bound so draws to canvas
             this.bindFramebuffer();
@@ -354,23 +303,18 @@ export class Renderer {
             this.setViewport(target.width, target.height);
         }
         if (clear || (this.autoClear && clear !== false)) {
-            // Ensure depth buffer writing is enabled so it can be cleared
-            if (this.depth && (!target || target.depth)) {
-                this.enable(this.gl.DEPTH_TEST);
-                this.setDepthMask(true);
-            }
-            this.gl.clear((this.color ? this.gl.COLOR_BUFFER_BIT : 0) |
-                (this.depth ? this.gl.DEPTH_BUFFER_BIT : 0) |
-                (this.stencil ? this.gl.STENCIL_BUFFER_BIT : 0));
+            this.clear(target);
         }
         // updates all scene graph matrices
-        if (update)
+        // if renderTask not doings this
+        if (needUpdate && scene)
             scene.updateMatrixWorld();
         // Update camera separately, in case not in scene graph
-        if (camera)
+        // if renderTask not doings this
+        if (needUpdate && camera)
             camera.updateMatrixWorld();
         // Get render list - entails culling and sorting
-        const renderList = this.getRenderList({ scene, camera, frustumCull, sort });
+        const renderList = task.getRenderList(this);
         const props = { camera, context: this };
         // prepare state
         for (const node of renderList)
@@ -378,5 +322,19 @@ export class Renderer {
         // draw state
         for (const node of renderList)
             node.draw(props);
+        task.finish();
+    }
+    clear(target) {
+        const color = this.color || target && target.options.color > 0;
+        const depth = this.depth || target && target.options.depth;
+        const stencil = this.stencil || target && target.options.stencil;
+        // Ensure depth buffer writing is enabled so it can be cleared
+        if (depth) {
+            this.enable(this.gl.DEPTH_TEST);
+            this.setDepthMask(true);
+        }
+        this.gl.clear((color ? this.gl.COLOR_BUFFER_BIT : 0) |
+            (depth ? this.gl.DEPTH_BUFFER_BIT : 0) |
+            (stencil ? this.gl.STENCIL_BUFFER_BIT : 0));
     }
 }

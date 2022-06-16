@@ -4,12 +4,16 @@ import { Texture } from '../core/Texture.js';
 import { RenderTarget } from '../core/RenderTarget.js';
 import { Triangle } from './Triangle.js';
 import { GL_ENUMS, Renderer } from '../core/Renderer.js';
-export class GPGPU {
+import { AbstractRenderTaskGroup } from '../core/RenderTaskGroup.js';
+import { DefaultRenderTask } from '../core/RenderTask.js';
+export class GPGPU extends AbstractRenderTaskGroup {
     constructor(context, { 
     // Always pass in array of vec4s (RGBA values within texture)
     data = new Float32Array(16), geometry = new Triangle(null), type = GL_ENUMS.HALF_FLOAT, // Pass in gl.FLOAT to force it, defaults to gl.HALF_FLOAT
      }) {
+        super();
         this.passes = [];
+        this._task = new DefaultRenderTask();
         if (!(context instanceof Renderer)) {
             console.warn('[Post deprecation] You should pass instance of renderer instead of gl as argument');
         }
@@ -77,9 +81,6 @@ export class GPGPU {
                 this.uniform.value = this.fbo.read.texture;
             },
         };
-        this.uniform.value.prepare({ context: this.activeContext });
-        this.fbo.read.prepare({ context: this.activeContext });
-        this.fbo.write.prepare({ context: this.activeContext });
     }
     addPass({ vertex = defaultVertex, fragment = defaultFragment, uniforms = {}, textureUniform = 'tMap', enabled = true } = {}) {
         uniforms[textureUniform] = this.uniform;
@@ -95,16 +96,29 @@ export class GPGPU {
         this.passes.push(pass);
         return pass;
     }
-    render() {
-        const enabledPasses = this.passes.filter((pass) => pass.enabled);
-        enabledPasses.forEach((pass, i) => {
-            this.activeContext.render({
+    get renderTasks() {
+        return this;
+    }
+    *[Symbol.iterator]() {
+        for (const pass of this._enabledPasses) {
+            yield this._task.set({
                 scene: pass.mesh,
                 target: this.fbo.write,
                 clear: false,
+                frustumCull: false,
+                update: true,
             });
             this.fbo.swap();
-        });
+        }
+    }
+    begin(context) {
+        this.uniform.value.prepare({ context });
+        this.fbo.read.prepare({ context });
+        this.fbo.write.prepare({ context });
+        this._enabledPasses = this.passes.filter((pass) => pass.enabled);
+    }
+    finish() {
+        this._enabledPasses.length = 0;
     }
 }
 const defaultVertex = /* glsl */ `
