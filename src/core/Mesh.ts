@@ -43,7 +43,7 @@ export class Mesh<G extends Geometry = Geometry, P extends Program = Program> ex
     constructor(_gl: GLContext, {
         geometry,
         program,
-        mode =GL_ENUMS.TRIANGLES,
+        mode = GL_ENUMS.TRIANGLES,
         frustumCulled = true,
         renderOrder = 0
     }: IMeshInit<G, P>) {

@@ -39,112 +39,6 @@ export const RENDER_BUFFER_FORMATS = {
     },
 };
 
-abstract class RenderTargetStorage<T extends IRenderTargetStorageInit = IRenderTargetStorageInit> implements INativeObjectHolder {
-    public activeContext: Renderer;
-
-    public target: GLenum;
-    public format: GLenum;
-    public attachment: GLenum;
-    public width: number = 0;
-    public height: number = 0;
-
-    protected _invalid: boolean = true;
-
-    constructor (public options: T) {};
-
-    abstract prepare(args: { context: Renderer; camera: Camera; }): void;
-    abstract destroy(): void;
-
-    setSize(width: number, height: number) {
-        this._invalid = this._invalid || this.width !== width || this.height !== height;
-
-        this.width = width;
-        this.height = height;
-
-        this.options.width = width;
-        this.options.height = height;
-    }
-
-}
-
-class RenderBufferStorage extends RenderTargetStorage {
-    public buffer: WebGLRenderbuffer;
-
-    prepare({ context }: { context: Renderer }): void {
-        if (!this._invalid) {
-            return;
-        }
-
-        const { gl } = context;
-        const { format, attachment, target, width, height } = this.options;
-
-        this.buffer = this.buffer || gl.createRenderbuffer();
-
-        gl.bindRenderbuffer(GL_ENUMS.RENDERBUFFER, this.buffer);
-        gl.renderbufferStorage(GL_ENUMS.RENDERBUFFER, format, width, height);
-        gl.framebufferRenderbuffer(target, attachment, GL_ENUMS.RENDERBUFFER, this.buffer);
-
-        this.activeContext = context;
-        this.format = format;
-        this.attachment = attachment;
-        this.target = target;
-        this.width = width;
-        this.height = height;
-
-        this._invalid = false;
-    }
-
-    destroy(): void {
-        if (!this.buffer || !this.activeContext) {
-            return;
-        }
-
-        this.activeContext.gl.deleteRenderbuffer(this.buffer);
-    }
-}
-
-class TextureStorage extends RenderTargetStorage<IRenderTargetStorageInit & Partial<ITextureStyleInit>> {
-    public texture: Texture<null>;
-
-    protected _invalid: boolean;
-
-    prepare({context}: { context: Renderer }): void {
-        const { format, attachment, target, width, height } = this.options;
-
-        this.texture = this.texture || new Texture(null, {
-            ...this.options,
-            flipY: false,
-            generateMipmaps: false,
-            target: GL_ENUMS.TEXTURE_2D
-        });
-
-        this.texture.setSize(width, height);
-        this.texture.prepare({ context });
-
-        context.gl.framebufferTexture2D(
-            target,
-            attachment,
-            GL_ENUMS.TEXTURE_2D,
-            this.texture.texture,
-            0
-        );
-
-        this.width = width;
-        this.height = height;
-        this.attachment = attachment;
-        this.format = format;
-        this.target = target;
-
-        this.activeContext = context;
-
-        this._invalid = false;
-    }
-
-    destroy(): void {
-        this.texture?.destroy();
-    }
-}
-
 export class RenderTarget implements INativeObjectHolder {
     activeContext: Renderer;
 
@@ -159,22 +53,18 @@ export class RenderTarget implements INativeObjectHolder {
     public readonly textures: Texture[] = [];
     public depthTexture: Texture;
 
-    public readonly bufferStorages: {
-        depth?: RenderBufferStorage;
-        stencil?: RenderBufferStorage;
-        depthStencil?: RenderBufferStorage;
-    } = {};
-
-    public textureStorage: TextureStorage[] = [];
-    public depthTextureStorage: TextureStorage;
-
     public width: number;
     public height: number;
     public target: GLenum;
     public buffer: WebGLFramebuffer;
 
+    public stencilBuffer: WebGLRenderbuffer;
+    public depthBuffer: WebGLRenderbuffer;
+    public depthStencilBuffer: WebGLRenderbuffer;
+
     // said that RT not complete
-    private _invalid = false;
+    protected _invalid = false;
+    protected _attachmentsStorage: Map<string, WebGLFramebuffer | Texture<null>> = new Map();
 
     constructor(
         _gl: GLContext,
@@ -225,22 +115,59 @@ export class RenderTarget implements INativeObjectHolder {
         this._invalid = true;
     }
 
-    // Migrations
-
-    get texture(): Texture<null> {
-        return this.textureStorage[0].texture;
+    public get texture() {
+        return this.textures[0];
     }
 
-    get stencilBuffer() {
-        return this.bufferStorages.depthStencil?.buffer;
+    /**
+     * BEcause render buffers used only in RenderTarget not needed has OGL abstractions for it, use as has
+     */
+    protected _attachRenderBuffer(
+        context: Renderer,
+        options: IRenderTargetStorageInit
+    ): WebGLRenderbuffer {
+        const { gl } = context;
+        const { format, attachment, target, width, height } = options;
+        const key = `${format}${target}${attachment}`;
+
+        const buffer = this._attachmentsStorage.get(key) || gl.createRenderbuffer();
+
+        gl.bindRenderbuffer(GL_ENUMS.RENDERBUFFER, buffer);
+        gl.renderbufferStorage(GL_ENUMS.RENDERBUFFER, format, width, height);
+        gl.framebufferRenderbuffer(target, attachment, GL_ENUMS.RENDERBUFFER, buffer);
+
+        this._attachmentsStorage.set(key, buffer);
+        return buffer;
     }
 
-    get depthBuffer() {
-        return this.bufferStorages.depth?.buffer;
-    }
+    protected _attachTexture(
+        context: Renderer,
+        options: IRenderTargetStorageInit & Partial<ITextureStyleInit>
+    ): Texture<null> {
+        const { gl } = context;
+        const { format, attachment, target, width, height } = options;
+        const key = `${format}${target}${attachment}`;
 
-    get depthStencilBuffer() {
-        return this.bufferStorages.depthStencil?.buffer;
+        const texture = <Texture>this._attachmentsStorage.get(key) || new Texture(null, {
+            ...options,
+            flipY: false,
+            generateMipmaps: false,
+            target: GL_ENUMS.TEXTURE_2D,
+        });
+
+        texture.setSize(width, height);
+        texture.prepare({ context });
+
+        gl.framebufferTexture2D(
+            target,
+            attachment,
+            GL_ENUMS.TEXTURE_2D,
+            texture.texture,
+            0
+        );
+
+        this._attachmentsStorage.set(key, texture);
+        return texture;
     }
 
     prepare({ context }: { context: Renderer }): void {
@@ -249,8 +176,9 @@ export class RenderTarget implements INativeObjectHolder {
         }
 
         const { gl } = context;
-        const { bufferStorages: storages, options } = this;
+        const { options } = this;
         const drawBuffers = [];
+        const activeAttachments: Array<WebGLRenderbuffer | Texture> = [];
 
         options.width = options.width || context.gl.canvas.width;
         options.height = options.height || context.gl.canvas.height;
@@ -259,6 +187,7 @@ export class RenderTarget implements INativeObjectHolder {
         this.height = options.height;
         this.target = options.target;
         this.buffer = this.buffer || gl.createFramebuffer();
+        this.textures.length = 0;
 
         this._invalid = false;
 
@@ -266,17 +195,14 @@ export class RenderTarget implements INativeObjectHolder {
 
         // create and attach required num of color textures
         for (let i = 0; i < options.color; i++) {
-            const t = this.textureStorage[i] || new TextureStorage({
-                ...this.options,
+            const t = this._attachTexture(context, {
+                ...options,
                 attachment: GL_ENUMS.COLOR_ATTACHMENT0 + i,
             });
 
-            this.textureStorage[i] = t;
-            this.textures[i] = t.texture;
+            this.textures[i] = t;
 
-            t.setSize(this.width, this.height);
-            t.prepare({ context });
-
+            activeAttachments.push(t);
             drawBuffers.push(gl.COLOR_ATTACHMENT0 + i);
         }
 
@@ -286,8 +212,8 @@ export class RenderTarget implements INativeObjectHolder {
         }
 
         // note depth textures break stencil - so can't use together
-        if (this.options.depthTexture && (context.isWebgl2 || context.getExtension('WEBGL_depth_texture'))) {
-            const t = this.depthTextureStorage || new TextureStorage({
+        if (options.depthTexture && (context.isWebgl2 || context.getExtension('WEBGL_depth_texture'))) {
+            this.depthTexture = this._attachTexture(context, {
                 minFilter: GL_ENUMS.NEAREST,
                 magFilter: GL_ENUMS.NEAREST,
                 format: GL_ENUMS.DEPTH_COMPONENT,
@@ -295,45 +221,47 @@ export class RenderTarget implements INativeObjectHolder {
                 type: GL_ENUMS.UNSIGNED_INT,
                 attachment: GL_ENUMS.DEPTH_ATTACHMENT,
                 target: this.target,
-            })
+            });
 
-            this.depthTextureStorage = t;
-            this.depthTexture = this.depthTextureStorage.texture;
-
-            t.setSize(this.width, this.height);
-            t.prepare({ context });
-
+            activeAttachments.push(this.depthTexture);
         } else {
             let storageType: keyof typeof RENDER_BUFFER_FORMATS = 'depth';
 
-            if (this.options.stencil && !this.options.depth) {
+            if (options.stencil && !options.depth) {
                 storageType = 'stencil';
             }
 
-            if (this.options.depth && this.options.stencil) {
+            if (options.depth && options.stencil) {
                 storageType = 'depthStencil';
             }
 
-            // invalidate and destroy not needed
-            for (const key in storages) {
-                const old = storages[key] as RenderBufferStorage;
-
-                if (key !== storageType && old) {
-                    // invalidate storages
-                    old.destroy();
-                    storages[key] = null;
-                }
-            }
-
-            const storage = storages[storageType] || new RenderBufferStorage({
+            const renderBuffer = this._attachRenderBuffer(context, {
                 target: this.target,
+                width: this.width,
+                height: this.height,
                 ...RENDER_BUFFER_FORMATS[storageType]
             });
 
-            storage.setSize(this.width, this.height);
-            storage.prepare({ context });
+            for(const key in RENDER_BUFFER_FORMATS) {
+                this[key + 'Buffer'] = key === storageType ? renderBuffer : null;
+            }
 
-            storages[storageType] = storage;
+            activeAttachments.push(renderBuffer);
+        }
+
+        // remove older attachments
+        for (const [key, value] of this._attachmentsStorage) {
+            if (activeAttachments.indexOf(value) > -1) continue;
+
+            // destroy texture
+            if (value && value instanceof Texture) {
+                value.destroy();
+            } else {
+                // or delete render buffer
+                gl.deleteRenderbuffer(value);
+            }
+
+            this._attachmentsStorage.delete(key);
         }
 
         context.bindFramebuffer({ target: this.target });
@@ -355,17 +283,31 @@ export class RenderTarget implements INativeObjectHolder {
         // todo
         // implement it
 
-        for (const key in this.bufferStorages) {
-            (this.bufferStorages[key] as RenderBufferStorage)?.destroy();
-            this.bufferStorages[key] = null;
+        if (!this.buffer) {
+            return;
         }
 
-        for (const t of this.textureStorage) {
-            t.destroy();
-        }
-        this.textureStorage.length = 0;
+        const { gl } = this.activeContext;
 
-        this.depthTextureStorage?.destroy();
-        this.depthTextureStorage = null;
+        gl.deleteFramebuffer(this.buffer);
+
+        // remove all attachments
+        for (const [key, value] of this._attachmentsStorage) {
+            // destroy texture
+            if (value && value instanceof Texture) {
+                value.destroy();
+            } else {
+                // or delete render buffer
+                gl.deleteRenderbuffer(value);
+            }
+        }
+
+        this.stencilBuffer = null;
+        this.depthBuffer = null;
+        this.depthStencilBuffer = null;
+        this.depthTexture = null;
+        this.textures.length = 0;
+
+        this._attachmentsStorage.clear();
     }
 }

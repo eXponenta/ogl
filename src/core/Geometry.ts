@@ -76,7 +76,7 @@ export class Geometry<T extends string = any> implements INativeObjectHolder {
     public bounds: IGeometryBounds;
 
     // hacky way to did raycast of sphere
-    public raycast: string;
+    public raycast: 'sphere' | 'box';
 
     activeContext: Renderer;
 

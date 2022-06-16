@@ -47,7 +47,7 @@ export class Camera extends Transform implements ICamera {
     public bottom?: number;
     public zoom?: number;
 
-    constructor(gl, {
+    constructor(_gl, {
         near = 0.1,
         far = 100,
         fov = 45,
