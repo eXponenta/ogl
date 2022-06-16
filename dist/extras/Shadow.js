@@ -1,9 +1,14 @@
 import { Camera } from '../core/Camera.js';
 import { Program } from '../core/Program.js';
+import { Renderer } from '../core/Renderer.js';
 import { RenderTarget } from '../core/RenderTarget.js';
 export class Shadow {
-    constructor(_gl, { light = new Camera(null), width = 1024, height = width }) {
+    constructor(context, { light = new Camera(null), width = 1024, height = width }) {
         this.castMeshes = [];
+        if (!(context instanceof Renderer)) {
+            console.warn('[Shadow deprecation] You should pass instance of renderer instead of gl as argument');
+        }
+        this.activeContext = context instanceof Renderer ? context : context.renderer;
         this.light = light;
         this.target = new RenderTarget(null, { width, height });
         this.depthProgram = new Program(null, {
@@ -54,7 +59,7 @@ export class Shadow {
             }
         });
         // Render the depth shadow map using the light as the camera
-        this.gl.renderer.render({
+        this.activeContext.render({
             scene,
             camera: this.light,
             target: this.target,

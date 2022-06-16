@@ -1,7 +1,7 @@
 import type { Mesh } from '../core/Mesh.js';
 import { Camera } from '../core/Camera.js';
 import { Program } from '../core/Program.js';
-import { GLContext } from '../core/Renderer.js';
+import { GLContext, Renderer } from '../core/Renderer.js';
 import { RenderTarget } from '../core/RenderTarget.js';
 export interface IShadowReadyMesh extends Mesh {
     colorProgram?: Program;
@@ -22,11 +22,12 @@ export declare class Shadow {
      * @deprecated Not used yet
      */
     readonly gl: GLContext;
+    readonly activeContext: Renderer;
     light: Camera;
     target: RenderTarget;
     private depthProgram;
     private castMeshes;
-    constructor(_gl: GLContext, { light, width, height }: {
+    constructor(context: GLContext | Renderer, { light, width, height }: {
         light?: Camera;
         width?: number;
         height?: any;
