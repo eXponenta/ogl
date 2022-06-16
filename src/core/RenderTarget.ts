@@ -118,6 +118,7 @@ class TextureStorage extends RenderTargetStorage<IRenderTargetStorageInit & Part
             target: GL_ENUMS.TEXTURE_2D
         });
 
+        this.texture.setSize(width, height);
         this.texture.prepare({ context });
 
         context.gl.framebufferTexture2D(
@@ -127,8 +128,6 @@ class TextureStorage extends RenderTargetStorage<IRenderTargetStorageInit & Part
             this.texture.texture,
             0
         );
-
-        this.texture.setSize(width, height);
 
         this.width = width;
         this.height = height;

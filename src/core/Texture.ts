@@ -172,7 +172,7 @@ export class Texture<T extends IImageSource = null> implements INativeObjectHold
             return;
         }
 
-        const needsUpdate = !(this.image === this.store.image && !this.needsUpdate) || this.activeContext !== context;
+        const needsUpdate = this.image !== this.store.image || this.needsUpdate || this.activeContext !== context;
         if (needsUpdate) {
             this.upload(context);
         }
@@ -195,6 +195,16 @@ export class Texture<T extends IImageSource = null> implements INativeObjectHold
             this.texture,
             this.textureUnit
         );
+    }
+
+    public setSize(width: number, height: number): void {
+        if (this.image) {
+            return;
+        }
+
+        this.width = width;
+        this.height = height;
+        this.needsUpdate = true;
     }
 
     /**
