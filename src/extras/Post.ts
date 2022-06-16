@@ -111,7 +111,7 @@ export class Post {
         textureUniform = 'tMap',
         enabled = true
     }: Partial<IRenderPassInit> = {}) {
-        uniforms[textureUniform] = { value: this.fbo.read.texture };
+        uniforms[textureUniform] = { value: null };
 
         const program = new Program(null, { vertex, fragment, uniforms });
         const mesh = new Mesh(null, { geometry: this.geometry, program });
@@ -153,6 +153,10 @@ export class Post {
 
     // Uses same arguments as renderer.render, with addition of optional texture passed in to avoid scene render
     render({ scene, camera, texture, target = null, update = true, sort = true, frustumCull }) {
+
+        this.fbo.read.prepare({ context: this.activeContext });
+        this.fbo.write.prepare({ context: this.activeContext });
+
         const enabledPasses = this.passes.filter((pass) => pass.enabled);
 
         if (!texture) {
