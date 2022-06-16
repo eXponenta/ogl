@@ -118,7 +118,7 @@
 
                 void main() {
                     vUv = uv;
-                    
+
                     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
                 }
             `;
@@ -132,7 +132,7 @@
 
                 void main() {
                     float shadow = texture2D(tMap, vUv).g;
-                    
+
                     gl_FragColor.rgb = vec3(0.0);
                     gl_FragColor.a = shadow;
                 }
@@ -271,7 +271,8 @@
 
                 // Calling 'update' updates the bones with all of the
                 // attached animations based on their weights.
-                if (skin) skin.update();
+                // skin will be updated automatically
+                // if (skin) skin.update();
 
                 controls.update();
                 renderer.render({ scene, camera });

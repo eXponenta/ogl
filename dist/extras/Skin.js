@@ -3,17 +3,14 @@ import { Transform } from '../core/Transform.js';
 import { Mat4 } from '../math/Mat4.js';
 import { Texture } from '../core/Texture.js';
 import { Animation } from './Animation.js';
+import { GL_ENUMS } from '../core/Renderer.js';
 const tempMat4 = new Mat4();
 export class Skin extends Mesh {
-    constructor(gl, { rig, geometry, program, mode = gl.TRIANGLES }) {
-        super(gl, { geometry, program, mode });
+    constructor(_gl, { rig, geometry, program, mode = GL_ENUMS.TRIANGLES }) {
+        super(null, { geometry, program, mode });
         this.animations = [];
-        this.createBones(rig);
-        this.createBoneTexture();
-        Object.assign(this.program.uniforms, {
-            boneTexture: { value: this.boneTexture },
-            boneTextureSize: { value: this.boneTextureSize },
-        });
+        this._invalid = true;
+        this._rig = rig;
     }
     createBones(rig) {
         // Create root so that can simply update world matrix of whole skeleton
@@ -43,30 +40,37 @@ export class Skin extends Mesh {
         this.bones.forEach((bone) => {
             bone.bindInverse = new Mat4(...bone.worldMatrix).inverse();
         });
+        // bind bones to animation
+        this.animations.forEach((a) => {
+            a.objects = this.bones;
+        });
     }
-    createBoneTexture() {
+    createBoneTexture({ context }) {
         if (!this.bones.length)
             return;
         const size = Math.max(4, Math.pow(2, Math.ceil(Math.log(Math.sqrt(this.bones.length * 4)) / Math.LN2)));
         this.boneMatrices = new Float32Array(size * size * 4);
         this.boneTextureSize = size;
-        this.boneTexture = new Texture(this.gl, {
+        this.boneTexture = new Texture(null, {
             image: this.boneMatrices,
             generateMipmaps: false,
-            type: this.gl.FLOAT,
-            internalFormat: this.gl.renderer.isWebgl2 ? this.gl.RGBA32F : this.gl.RGBA,
-            minFilter: this.gl.NEAREST,
-            magFilter: this.gl.NEAREST,
+            type: GL_ENUMS.FLOAT,
+            internalFormat: context.isWebgl2 ? GL_ENUMS.RGBA32F : GL_ENUMS.RGBA,
+            minFilter: GL_ENUMS.NEAREST,
+            magFilter: GL_ENUMS.NEAREST,
             flipY: false,
             width: size,
         });
     }
     addAnimation(data) {
-        const animation = new Animation({ objects: this.bones, data });
+        // bones not exist on this moment
+        const animation = new Animation({ objects: null, data });
         this.animations.push(animation);
         return animation;
     }
     update() {
+        if (this._invalid)
+            return;
         // Calculate combined animation weight
         let total = 0;
         this.animations.forEach((animation) => (total += animation.weight));
@@ -76,6 +80,16 @@ export class Skin extends Mesh {
         });
     }
     prepare(args) {
+        if (this._invalid) {
+            this.createBones(this._rig);
+            this.createBoneTexture(args);
+            Object.assign(this.program.uniforms, {
+                boneTexture: { value: this.boneTexture },
+                boneTextureSize: { value: this.boneTextureSize },
+            });
+            this._invalid = false;
+        }
+        this.update();
         // Update world matrices manually, as not part of scene graph
         this.root.updateMatrixWorld(true);
         // Update bone texture
