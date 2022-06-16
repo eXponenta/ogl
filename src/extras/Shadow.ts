@@ -2,7 +2,7 @@ import type { Mesh } from '../core/Mesh.js';
 
 import { Camera } from '../core/Camera.js';
 import { Program } from '../core/Program.js';
-import { GLContext } from '../core/Renderer.js';
+import { GLContext, Renderer } from '../core/Renderer.js';
 import { RenderTarget } from '../core/RenderTarget.js';
 
 export interface IShadowReadyMesh extends Mesh {
@@ -26,17 +26,23 @@ export class Shadow {
      * @deprecated Not used yet
      */
     public readonly gl: GLContext;
+    public readonly activeContext: Renderer;
     public light: Camera;
     public target: RenderTarget;
 
     private depthProgram: Program;
     private castMeshes: Mesh[] = [];
 
-    constructor(_gl: GLContext, {
+    constructor(context: GLContext | Renderer, {
         light = new Camera(null),
         width = 1024,
         height = width
     }) {
+        if (!(context instanceof Renderer)) {
+            console.warn('[Shadow deprecation] You should pass instance of renderer instead of gl as argument')
+        }
+
+        this.activeContext = context instanceof Renderer ? context : context.renderer;
 
         this.light = light;
 
@@ -103,7 +109,7 @@ export class Shadow {
         });
 
         // Render the depth shadow map using the light as the camera
-        this.gl.renderer.render({
+        this.activeContext.render({
             scene,
             camera: this.light,
             target: this.target,
