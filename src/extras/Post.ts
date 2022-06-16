@@ -4,9 +4,12 @@ import { Program } from '../core/Program.js';
 import { Mesh } from '../core/Mesh.js';
 import { RenderTarget } from '../core/RenderTarget.js';
 import { Triangle } from './Triangle.js';
-import { GLContext, GL_ENUMS, Renderer } from '../core/Renderer.js';
+import { GLContext, GL_ENUMS, IRenderOptions, Renderer } from '../core/Renderer.js';
 import type { Geometry } from '../core/Geometry.js';
 import { GL } from '../core/State.js';
+import { AbstractRenderTaskGroup } from '../core/RenderTaskGroup.js';
+import { AbstractRenderTask, DefaultRenderTask } from '../core/RenderTask.js';
+import { Texture } from '../core/Texture.js';
 
 export interface IPostInit {
     width: number;
@@ -36,13 +39,17 @@ export interface IRenderPass {
     textureUniform: string;
 }
 
+export interface IPostOptions extends IRenderOptions {
+    texture: Texture<any>;
+}
+
 export interface ISwapChain {
     read: RenderTarget;
     write: RenderTarget;
     swap(): void;
 }
 
-export class Post {
+export class Post extends AbstractRenderTaskGroup {
     /**
      * @deprecated, always null, not use it. use activeContext instead
      *
@@ -68,6 +75,10 @@ export class Post {
     private uniform: { value: any } = { value: null };
     private fbo: ISwapChain;
 
+    private _enabledPasses: IRenderPass[];
+    private _postTask = new DefaultRenderTask();
+    private _sceneOptions: IPostOptions;
+
     constructor(
         context: GLContext |  Renderer,
         {
@@ -82,6 +93,7 @@ export class Post {
             targetOnly = null,
         } : Partial<IPostInit>  = {}
     ) {
+        super();
         if (!(context instanceof Renderer)) {
             console.warn('[Post deprecation] You should pass instance of renderer instead of gl as argument')
         }
@@ -154,33 +166,65 @@ export class Post {
         this.fbo.write.prepare({ context: this.activeContext });
     }
 
-    // Uses same arguments as renderer.render, with addition of optional texture passed in to avoid scene render
-    render({ scene, camera, texture, target = null, update = true, sort = true, frustumCull }) {
-        const enabledPasses = this.passes.filter((pass) => pass.enabled);
+    setRenderOptions(options: IPostOptions) {
+        this._sceneOptions = options;
+    }
+
+    /**
+     * @deprecated
+     * Use post as render task group
+     */
+    render(option: IPostOptions) {
+        this.setRenderOptions(option);
+        this.activeContext.render(this);
+    }
+
+    get renderTasks(): Iterable<DefaultRenderTask> {
+        return this;
+    }
+
+    *[Symbol.iterator]() {
+        const enabledPasses = this._enabledPasses;
+        const { target, texture } = this._sceneOptions;
 
         if (!texture) {
-            this.activeContext.render({
-                scene,
-                camera,
-                target: enabledPasses.length || (!target && this.targetOnly) ? this.fbo.write : target,
-                update,
-                sort,
-                frustumCull,
-            });
+            this._postTask.set(this._sceneOptions);
+            this._postTask.target = enabledPasses.length || (!target && this.targetOnly)
+                ? this.fbo.write
+                : target;
+
+            yield this._postTask;
+
             this.fbo.swap();
         }
 
-        enabledPasses.forEach((pass, i) => {
-            pass.mesh.program.uniforms[pass.textureUniform].value = !i && texture ? texture : this.fbo.read.texture;
-            this.activeContext.render({
+        for(let i = 0; i < enabledPasses.length; i++) {
+            const pass = enabledPasses[i];
+
+            pass.mesh.program.uniforms[pass.textureUniform].value = (!i && texture)
+                ? texture
+                : this.fbo.read.texture;
+
+            yield this._postTask.set({
                 scene: pass.mesh,
                 target: i === enabledPasses.length - 1 && (target || !this.targetOnly) ? target : this.fbo.write,
                 clear: true,
             });
+
             this.fbo.swap();
-        });
+        }
 
         this.uniform.value = this.fbo.read.texture;
+    }
+
+
+    begin(context: Renderer): void {
+        this.fbo.read.prepare({ context });
+        this.fbo.write.prepare({ context });
+        this._enabledPasses = this.passes.filter((pass) => pass.enabled);
+    }
+
+    finish(): void {
     }
 }
 

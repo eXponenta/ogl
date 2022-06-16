@@ -30,7 +30,7 @@ export interface IDrawable extends ISortedTraversable {
     draw(args: { camera: Camera; context: Renderer }): void;
 }
 
-export abstract class RenderTask implements Required<IRenderOptions> {
+export abstract class AbstractRenderTask implements Required<IRenderOptions> {
     public readonly isRenderTask = true;
 
     scene: Transform;
@@ -51,7 +51,7 @@ export abstract class RenderTask implements Required<IRenderOptions> {
     abstract finish(): void;
 }
 
-export class BaseRenderTask extends RenderTask {
+export class DefaultRenderTask extends AbstractRenderTask {
     public set({
         scene,
         camera = null,
@@ -165,10 +165,10 @@ export class BaseRenderTask extends RenderTask {
     public begin(context: Renderer): boolean {
 
         // updates all scene graph matrices
-        if (this.update) this.scene.updateMatrixWorld();
+        if (this.update && this.scene) this.scene.updateMatrixWorld();
 
         // Update camera separately, in case not in scene graph
-        if (this.camera) this.camera.updateMatrixWorld();
+        if (this.camera && this.camera) this.camera.updateMatrixWorld();
 
         return true;
     }

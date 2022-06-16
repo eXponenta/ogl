@@ -5,7 +5,8 @@ import { RenderState } from './State.js';
 import { nextUUID } from './uuid.js';
 
 import { IDisposable } from './IDisposable.js';
-import { BaseRenderTask, RenderTask } from './RenderTask.js';
+import { DefaultRenderTask, AbstractRenderTask } from './RenderTask.js';
+import { AbstractRenderTaskGroup, RenderTaskGroup } from './RenderTaskGroup.js';
 
 // TODO: Handle context loss https://www.khronos.org/webgl/wiki/HandlingContextLost
 
@@ -68,8 +69,8 @@ export class Renderer {
     public readonly id: number;
     public readonly gl: GLContext;
     public readonly isWebgl2: boolean;
-    public readonly renderTasks: RenderTask[] = [];
-    public readonly baseRenderTask: BaseRenderTask = new BaseRenderTask();
+    public readonly renderGroups: AbstractRenderTaskGroup[] = [];
+    public readonly baseRenderTask = new DefaultRenderTask();
 
     // gl state stores to avoid redundant calls on methods used internally
     public readonly state: RenderState;
@@ -371,28 +372,54 @@ export class Renderer {
         return this.extensions[extension][extFunc].bind(this.extensions[extension]);
     }
 
-    setRenderTasks (tasks: RenderTask[]) {
-        this.renderTasks.length = 0;
-        this.renderTasks.push(...tasks);
+    setRenderGroups (tasks: (DefaultRenderTask | RenderTaskGroup)[]) {
+        this.renderGroups.length = 0;
+
+        if ((<DefaultRenderTask>tasks[0]).isRenderTask) {
+            this.renderGroups.push(new RenderTaskGroup(tasks as DefaultRenderTask[]));
+        }
+
+        this.renderGroups.push(...(tasks as RenderTaskGroup[]));
     }
 
-    render (options: IRenderOptions | RenderTask): void;
-    render (options: (IRenderOptions | RenderTask)[]): void;
+    render (options: IRenderOptions | AbstractRenderTask): void;
+    render (options: (IRenderOptions | AbstractRenderTask)[]): void;
+    render (group: AbstractRenderTaskGroup | AbstractRenderTaskGroup[]): void;
     render (): void;
-    render (tasks: any = this.renderTasks) {
+    render (tasks?: any) {
+        let renderGroups = this.renderGroups;
 
-        if (Array.isArray(tasks)) {
-            for(const run of tasks) {
-                this._executeRenderTask(run);
+        if (tasks) {
+            if (!Array.isArray(tasks)) {
+                tasks = [tasks];
             }
-        } else {
-            this._executeRenderTask(tasks);
+
+            // is render group
+            if ((tasks[0] as AbstractRenderTaskGroup).iRenderGroup) {
+                renderGroups = tasks;
+            } else if(tasks) {
+                // render task as arrays
+                for(const t of tasks) this._executeRenderTask(t);
+            }
+        }
+
+        // if not external task - run base group
+        for (const group of renderGroups) {
+            group.begin(this);
+
+            const tasks = group.renderTasks;
+
+            for(const task of tasks) {
+                this._executeRenderTask(task);
+            }
+
+            group.finish();
         }
     }
 
-    public _executeRenderTask(run: RenderTask | IRenderOptions): void {
-        const task = (run as RenderTask).isRenderTask
-            ? <RenderTask> run
+    public _executeRenderTask(run: AbstractRenderTask | IRenderOptions): void {
+        const task = (run as AbstractRenderTask).isRenderTask
+            ? <AbstractRenderTask> run
             : this.baseRenderTask.set(run);
 
         const needUpdate = task.begin(this);

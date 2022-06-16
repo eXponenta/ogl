@@ -6,8 +6,10 @@ import { Triangle } from './Triangle.js';
 import { GLContext, GL_ENUMS, Renderer } from '../core/Renderer.js';
 import type { Geometry } from '../core/Geometry.js';
 import type { ISwapChain, IRenderPass, IRenderPassInit } from './Post.js';
+import { AbstractRenderTaskGroup, RenderTaskGroup } from '../core/RenderTaskGroup.js';
+import { DefaultRenderTask } from '../core/RenderTask.js';
 
-export class GPGPU {
+export class GPGPU extends AbstractRenderTaskGroup {
     public activeContext: Renderer;
     public readonly passes: IRenderPass[] =[];
 
@@ -18,6 +20,9 @@ export class GPGPU {
     private uniform: { value: Texture<Float32Array> };
     private fbo: ISwapChain;
 
+    private _enabledPasses: IRenderPass[];
+    private _task = new DefaultRenderTask();
+
     constructor(
         context: GLContext | Renderer,
         {
@@ -27,6 +32,7 @@ export class GPGPU {
             type = (GL_ENUMS as any).HALF_FLOAT, // Pass in gl.FLOAT to force it, defaults to gl.HALF_FLOAT
         }
     ) {
+        super();
         if (!(context instanceof Renderer)) {
             console.warn('[Post deprecation] You should pass instance of renderer instead of gl as argument')
         }
@@ -102,10 +108,6 @@ export class GPGPU {
                 this.uniform.value = this.fbo.read.texture;
             },
         };
-
-        this.uniform.value.prepare( { context: this.activeContext });
-        this.fbo.read.prepare({ context: this.activeContext });
-        this.fbo.write.prepare({ context: this.activeContext });
     }
 
     addPass({
@@ -131,17 +133,33 @@ export class GPGPU {
         return pass;
     }
 
-    render() {
-        const enabledPasses = this.passes.filter((pass) => pass.enabled);
+    get renderTasks(): Iterable<DefaultRenderTask> {
+        return this;
+    }
 
-        enabledPasses.forEach((pass, i) => {
-            this.activeContext.render({
+    *[Symbol.iterator]() {
+        for(const pass of this._enabledPasses) {
+            yield this._task.set({
                 scene: pass.mesh,
                 target: this.fbo.write,
                 clear: false,
+                frustumCull: false,
+                update: true,
             });
+
             this.fbo.swap();
-        });
+        }
+    }
+
+    begin(context: Renderer): void {
+        this.uniform.value.prepare( { context });
+        this.fbo.read.prepare({ context });
+        this.fbo.write.prepare({ context });
+        this._enabledPasses = this.passes.filter((pass) => pass.enabled);
+    }
+
+    finish(): void {
+        this._enabledPasses.length = 0;
     }
 }
 
