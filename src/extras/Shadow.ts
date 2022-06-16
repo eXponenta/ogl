@@ -22,6 +22,9 @@ export interface IShadowPassInit {
 }
 
 export class Shadow {
+    /**
+     * @deprecated Not used yet
+     */
     public readonly gl: GLContext;
     public light: Camera;
     public target: RenderTarget;
@@ -29,18 +32,17 @@ export class Shadow {
     private depthProgram: Program;
     private castMeshes: Mesh[] = [];
 
-    constructor(gl: GLContext, {
-        light = new Camera(gl),
+    constructor(_gl: GLContext, {
+        light = new Camera(null),
         width = 1024,
         height = width
     }) {
-        this.gl = gl;
 
         this.light = light;
 
-        this.target = new RenderTarget(gl, { width, height });
+        this.target = new RenderTarget(null, { width, height });
 
-        this.depthProgram = new Program(gl, {
+        this.depthProgram = new Program(null, {
             vertex: defaultVertex,
             fragment: defaultFragment,
             cullFace: null,

@@ -113,6 +113,16 @@ export class RenderTarget implements INativeObjectHolder {
         this.depth = depth;
         this.target = target;
         this._invalid = true;
+
+        // pre-allocate texture
+        // only for references
+        // because context is missed - texture can't prepared
+        for (let i = 0; i < color; i++) {
+            this.textures[i] = this._attachTexture(null, {
+                ...this.options,
+                attachment: GL_ENUMS.COLOR_ATTACHMENT0 + i,
+            });
+        }
     }
 
     public get texture() {
@@ -144,7 +154,6 @@ export class RenderTarget implements INativeObjectHolder {
         context: Renderer,
         options: IRenderTargetStorageInit & Partial<ITextureStyleInit>
     ): Texture<null> {
-        const { gl } = context;
         const { format, attachment, target, width, height } = options;
         const key = `${format}${target}${attachment}`;
 
@@ -156,15 +165,20 @@ export class RenderTarget implements INativeObjectHolder {
         });
 
         texture.setSize(width, height);
-        texture.prepare({ context });
 
-        gl.framebufferTexture2D(
-            target,
-            attachment,
-            GL_ENUMS.TEXTURE_2D,
-            texture.texture,
-            0
-        );
+        if (context) {
+            const { gl } = context;
+
+            texture.prepare({ context });
+
+            gl.framebufferTexture2D(
+                target,
+                attachment,
+                GL_ENUMS.TEXTURE_2D,
+                texture.texture,
+                0
+            );
+        }
 
         this._attachmentsStorage.set(key, texture);
         return texture;
@@ -225,28 +239,28 @@ export class RenderTarget implements INativeObjectHolder {
 
             activeAttachments.push(this.depthTexture);
         } else {
-            let storageType: keyof typeof RENDER_BUFFER_FORMATS = 'depth';
+            const storageType: keyof typeof RENDER_BUFFER_FORMATS =
+                (options.depth && options.stencil)
+                    ? 'depthStencil'
+                    : options.depth
+                        ? 'depth'
+                        : options.stencil ? 'stencil'
+                        : null ;
 
-            if (options.stencil && !options.depth) {
-                storageType = 'stencil';
+            if (storageType) {
+                const renderBuffer = this._attachRenderBuffer(context, {
+                    target: this.target,
+                    width: this.width,
+                    height: this.height,
+                    ...RENDER_BUFFER_FORMATS[storageType]
+                });
+
+                for(const key in RENDER_BUFFER_FORMATS) {
+                    this[key + 'Buffer'] = key === storageType ? renderBuffer : null;
+                }
+
+                activeAttachments.push(renderBuffer);
             }
-
-            if (options.depth && options.stencil) {
-                storageType = 'depthStencil';
-            }
-
-            const renderBuffer = this._attachRenderBuffer(context, {
-                target: this.target,
-                width: this.width,
-                height: this.height,
-                ...RENDER_BUFFER_FORMATS[storageType]
-            });
-
-            for(const key in RENDER_BUFFER_FORMATS) {
-                this[key + 'Buffer'] = key === storageType ? renderBuffer : null;
-            }
-
-            activeAttachments.push(renderBuffer);
         }
 
         // remove older attachments
