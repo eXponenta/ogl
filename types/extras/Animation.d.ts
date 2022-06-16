@@ -7,8 +7,8 @@ export interface IAnimInit {
     data: IAnimData;
 }
 export declare class Animation {
-    readonly objects: Transform[];
-    readonly data: IAnimData;
+    objects: Transform[];
+    data: IAnimData;
     elapsed: number;
     weight: number;
     duration: number;

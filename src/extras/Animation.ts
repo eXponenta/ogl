@@ -20,8 +20,8 @@ export interface IAnimInit {
 }
 
 export class Animation {
-    public readonly objects: Transform[];
-    public readonly data: IAnimData;
+    public objects: Transform[];
+    public data: IAnimData;
 
     public elapsed: number = 0;
     public weight: number = 1;

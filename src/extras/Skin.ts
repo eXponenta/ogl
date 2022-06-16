@@ -4,7 +4,7 @@ import { Mat4 } from '../math/Mat4.js';
 import { Texture } from '../core/Texture.js';
 import { Animation } from './Animation.js';
 import type { IAnimData } from './Animation.js';
-import type { GLContext, Renderer } from '../core/Renderer.js';
+import { GLContext, GL_ENUMS, Renderer } from '../core/Renderer.js';
 import type { Geometry } from '../core/Geometry.js';
 import type { Program } from '../core/Program.js';
 import { Camera } from '../core/Camera.js';
@@ -47,21 +47,18 @@ export class Skin extends Mesh<any, Program<'boneTexture' | 'boneTextureSize'>> 
     public root: Transform;
     public bones: IBoneTransform[];
 
-    constructor(gl: GLContext, {
+    private _rig: IRigData;
+    private _invalid: boolean = true;
+
+    constructor(_gl: GLContext, {
         rig,
         geometry,
         program,
-        mode = gl.TRIANGLES
+        mode = GL_ENUMS.TRIANGLES
     }: ISkinInit) {
-        super(gl, { geometry, program, mode });
+        super(null, { geometry, program, mode });
 
-        this.createBones(rig);
-        this.createBoneTexture();
-
-        Object.assign(this.program.uniforms, {
-            boneTexture: { value: this.boneTexture },
-            boneTextureSize: { value: this.boneTextureSize },
-        });
+        this._rig = rig;
     }
 
     createBones(rig: IRigData) {
@@ -96,32 +93,40 @@ export class Skin extends Mesh<any, Program<'boneTexture' | 'boneTextureSize'>> 
         this.bones.forEach((bone) => {
             bone.bindInverse = new Mat4(...bone.worldMatrix).inverse();
         });
+
+        // bind bones to animation
+        this.animations.forEach((a) => {
+            a.objects = this.bones;
+        })
     }
 
-    createBoneTexture() {
+    createBoneTexture({context}: {context: Renderer}) {
         if (!this.bones.length) return;
         const size = Math.max(4, Math.pow(2, Math.ceil(Math.log(Math.sqrt(this.bones.length * 4)) / Math.LN2)));
         this.boneMatrices = new Float32Array(size * size * 4);
         this.boneTextureSize = size;
-        this.boneTexture = new Texture(this.gl, {
+        this.boneTexture = new Texture(null, {
             image: this.boneMatrices,
             generateMipmaps: false,
-            type: this.gl.FLOAT,
-            internalFormat: this.gl.renderer.isWebgl2 ? (this.gl as WebGL2RenderingContext).RGBA32F : this.gl.RGBA,
-            minFilter: this.gl.NEAREST,
-            magFilter: this.gl.NEAREST,
+            type: GL_ENUMS.FLOAT,
+            internalFormat: context.isWebgl2 ? (GL_ENUMS as WebGL2RenderingContext).RGBA32F : GL_ENUMS.RGBA,
+            minFilter: GL_ENUMS.NEAREST,
+            magFilter: GL_ENUMS.NEAREST,
             flipY: false,
             width: size,
         });
     }
 
     addAnimation(data: IAnimData) {
-        const animation = new Animation({ objects: this.bones, data });
+        // bones not exist on this moment
+        const animation = new Animation({ objects: null, data });
         this.animations.push(animation);
         return animation;
     }
 
     update() {
+        if (this._invalid) return;
+
         // Calculate combined animation weight
         let total = 0;
         this.animations.forEach((animation) => (total += animation.weight));
@@ -133,6 +138,20 @@ export class Skin extends Mesh<any, Program<'boneTexture' | 'boneTextureSize'>> 
     }
 
     prepare(args:{ camera: Camera; context: Renderer; }): void {
+        if (this._invalid) {
+            this.createBones(this._rig);
+            this.createBoneTexture(args);
+
+            Object.assign(this.program.uniforms, {
+                boneTexture: { value: this.boneTexture },
+                boneTextureSize: { value: this.boneTextureSize },
+            });
+
+            this._invalid = false;
+        }
+
+        this.update();
+
         // Update world matrices manually, as not part of scene graph
         this.root.updateMatrixWorld(true);
 
@@ -142,6 +161,7 @@ export class Skin extends Mesh<any, Program<'boneTexture' | 'boneTextureSize'>> 
             tempMat4.multiply(bone.worldMatrix, bone.bindInverse);
             this.boneMatrices.set(tempMat4, i * 16);
         });
+
         if (this.boneTexture) this.boneTexture.needsUpdate = true;
 
         super.prepare(args);
