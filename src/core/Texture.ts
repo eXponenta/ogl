@@ -58,6 +58,7 @@ export interface IEmptyTextureInit extends IBaseTextureInit {
     // used for RenderTargets or Data Textures
     width: number;
     height: number;
+    image?: Uint8Array | Float32Array
 }
 
 export type ITextureInit<T extends IImageSource> = IRegularTextureInit<T> | IEmptyTextureInit;

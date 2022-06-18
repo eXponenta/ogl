@@ -3,8 +3,9 @@
  * Used for reusing a native program for different Ogl programs without re-use of base shader.
  */
 
+import { Camera } from "./Camera";
 import { IDisposable } from "./IDisposable";
-import { GLContext } from "./Renderer.js";
+import { GLContext, INativeObjectHolder, Renderer } from "./Renderer.js";
 import { nextUUID } from "./uuid.js";
 
 export interface IProgramSource {
@@ -20,20 +21,20 @@ export interface IUniformActiveInfo extends WebGLActiveInfo {
     isStruct: boolean;
 }
 
-export class ProgramData implements IDisposable, IProgramSource {
+export class ProgramData implements INativeObjectHolder, IProgramSource {
     static CACHE = new WeakMap<GLContext, Map<string, ProgramData>>();
 
     /**
      * Create or return already existed program data for current shaders source
      */
-    static create (gl: GLContext, { vertex, fragment }: IProgramSource) {
-        const store = ProgramData.CACHE.get(gl);
+    static create (context: Renderer, { vertex, fragment }: IProgramSource) {
+        const store = ProgramData.CACHE.get(context.gl);
 
-        if (!store) return new ProgramData(gl, { vertex, fragment });
+        if (!store) return new ProgramData(null, { vertex, fragment });
 
         const program = store.get(vertex + fragment);
 
-        if (!program) return new ProgramData(gl, { vertex, fragment });
+        if (!program) return new ProgramData(null, { vertex, fragment });
 
         program.usage ++;
 
@@ -43,10 +44,10 @@ export class ProgramData implements IDisposable, IProgramSource {
     /**
      * Store program data to cache
      */
-    static set (gl: GLContext, programData: ProgramData) {
-        const store = this.CACHE.get(gl) || new Map();
+    static set (context: Renderer, programData: ProgramData) {
+        const store = this.CACHE.get(context.gl) || new Map();
 
-        ProgramData.CACHE.set(gl, store);
+        ProgramData.CACHE.set(context.gl, store);
 
         if (store.has(programData.vertex + programData.fragment)) {
             console.warn(
@@ -74,8 +75,9 @@ export class ProgramData implements IDisposable, IProgramSource {
         return store.delete(programData.key);
     }
 
+    activeContext: Renderer;
+
     public readonly id: number;
-    public readonly gl: GLContext;
     public readonly vertex: string;
     public readonly fragment: string;
     public readonly uniformLocations = new Map<IUniformActiveInfo, WebGLUniformLocation>();
@@ -86,36 +88,31 @@ export class ProgramData implements IDisposable, IProgramSource {
     public attributeOrder: string = '';
 
     constructor(
-        gl: GLContext,
+        _gl: GLContext,
         {
             vertex,
             fragment,
         }: IProgramSource
     ) {
-        this.gl = gl;
         this.vertex = vertex;
         this.fragment = fragment;
         this.id = (1 << 8) + nextUUID();
-
-        this.compile();
     }
 
     get key(): string {
         return this.vertex + this.fragment;
     }
 
-    /**
-     * Compile or validate exist program
-     * @returns { boolean }
-     */
-    compile (): boolean {
-        const gl = this.gl;
+    prepare ( { context }: { context: Renderer }): void {
+        this.activeContext =  context;
+
+        const gl = this.activeContext.gl;
         const vertex = this.vertex;
         const fragment = this.fragment;
 
         // check that compiled program still alive
         if (this.program && gl.isProgram(this.program)) {
-            return true;
+            return;
         }
 
         // delete exist program for this context
@@ -145,7 +142,7 @@ export class ProgramData implements IDisposable, IProgramSource {
         gl.linkProgram(program);
         if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
             console.warn(gl.getProgramInfoLog(program));
-            return false;
+            return;
         }
 
         // Remove shader once linked
@@ -191,9 +188,7 @@ export class ProgramData implements IDisposable, IProgramSource {
         this.attributeOrder = locations.join('');
 
         // storing only valid programs
-        ProgramData.set(gl, this);
-
-        return true;
+        ProgramData.set(context, this);
     }
 
     destroy(): void {
@@ -204,9 +199,9 @@ export class ProgramData implements IDisposable, IProgramSource {
         this.usage--;
 
         if (this.usage <= 0 && this.program) {
-            this.gl.deleteProgram(this.program);
+            this.activeContext.gl.deleteProgram(this.program);
 
-            ProgramData.delete(this.gl, this);
+            ProgramData.delete(this.activeContext.gl, this);
         }
 
         (this as any).id = -1;

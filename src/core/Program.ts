@@ -25,6 +25,7 @@ export interface IProgramInit<U extends string = ''> extends IProgramSource {
     depthTest: boolean;
     depthWrite: boolean;
     depthFunc: GLenum;
+    programData: ProgramData;
 }
 
 export class Program<U extends string = any> implements INativeObjectHolder {
@@ -66,13 +67,16 @@ export class Program<U extends string = any> implements INativeObjectHolder {
             depthTest = true,
             depthWrite = true,
             depthFunc = GL_ENUMS.LESS,
+            programData = null,
         }: Partial<IProgramInit<U>> = {}
     ) {
         this.uniforms = uniforms as Record<U | IDefaultUniforms, IUniformData>;
         this.id = nextUUID();
 
-        if (!vertex) console.warn('vertex shader not supplied');
-        if (!fragment) console.warn('fragment shader not supplied');
+        if (!programData) {
+            if (!vertex) console.warn('vertex shader not supplied');
+            if (!fragment) console.warn('fragment shader not supplied');
+        }
 
         // Store program state
         this.transparent = transparent;
@@ -83,7 +87,8 @@ export class Program<U extends string = any> implements INativeObjectHolder {
         this.depthFunc = depthFunc;
         this.blendFunc = {} as any;
         this.blendEquation = {} as any;
-        this.programSource = { vertex, fragment };
+        this.programSource = vertex && fragment ? { vertex, fragment } : null;
+        this.programData = programData;
     }
 
     /**
@@ -157,9 +162,11 @@ export class Program<U extends string = any> implements INativeObjectHolder {
     }
 
     prepare ({ context }): void {
-        if (!this.programData || this.activeContext !== context) {
-            this.programData = ProgramData.create(context.gl, this.programSource);
+        if (!this.programData) {
+            this.programData = ProgramData.create(context, this.programSource);
         }
+
+        this.programData.prepare({context});
 
         const locs = this.programData.uniformLocations;
         const uniforms = this.uniforms;
