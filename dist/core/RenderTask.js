@@ -6,6 +6,10 @@ export class AbstractRenderTask {
     }
 }
 export class DefaultRenderTask extends AbstractRenderTask {
+    constructor(options) {
+        super();
+        this.set(options);
+    }
     set({ scene, camera = null, target = null, update = true, sort = true, frustumCull, clear }) {
         this.scene = scene;
         this.clear = clear;

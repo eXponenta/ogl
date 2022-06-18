@@ -52,6 +52,11 @@ export abstract class AbstractRenderTask implements Required<IRenderOptions> {
 }
 
 export class DefaultRenderTask extends AbstractRenderTask {
+    constructor(options?: IRenderOptions) {
+        super();
+        this.set(options);
+    }
+
     public set({
         scene,
         camera = null,

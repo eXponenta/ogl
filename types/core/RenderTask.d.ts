@@ -40,6 +40,7 @@ export declare abstract class AbstractRenderTask implements Required<IRenderOpti
     abstract finish(): void;
 }
 export declare class DefaultRenderTask extends AbstractRenderTask {
+    constructor(options?: IRenderOptions);
     set({ scene, camera, target, update, sort, frustumCull, clear }: IRenderOptions): this;
     sortOpaque(a: ISortable, b: ISortable): number;
     sortTransparent(a: ISortable, b: ISortable): number;

@@ -4,7 +4,7 @@ import type { RenderTarget } from './RenderTarget.js';
 import { RenderState } from './State.js';
 import { IDisposable } from './IDisposable.js';
 import { DefaultRenderTask, AbstractRenderTask } from './RenderTask.js';
-import { AbstractRenderTaskGroup, RenderTaskGroup } from './RenderTaskGroup.js';
+import { AbstractRenderTaskGroup } from './RenderTaskGroup.js';
 export interface INativeObjectHolder extends IDisposable {
     activeContext: Renderer;
     /**
@@ -98,7 +98,7 @@ export declare class Renderer {
         buffer?: any;
     }): void;
     getExtension(extension: string, webgl2Func?: string, extFunc?: string): any;
-    setRenderGroups(tasks: (DefaultRenderTask | RenderTaskGroup)[]): void;
+    setRenderGroups(tasks: (AbstractRenderTask | AbstractRenderTaskGroup)[]): void;
     render(options: IRenderOptions | AbstractRenderTask): void;
     render(options: (IRenderOptions | AbstractRenderTask)[]): void;
     render(group: AbstractRenderTaskGroup | AbstractRenderTaskGroup[]): void;

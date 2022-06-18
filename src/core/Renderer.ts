@@ -372,14 +372,14 @@ export class Renderer {
         return this.extensions[extension][extFunc].bind(this.extensions[extension]);
     }
 
-    setRenderGroups (tasks: (DefaultRenderTask | RenderTaskGroup)[]) {
+    setRenderGroups (tasks: (AbstractRenderTask | AbstractRenderTaskGroup)[]) {
         this.renderGroups.length = 0;
 
-        if ((<DefaultRenderTask>tasks[0]).isRenderTask) {
-            this.renderGroups.push(new RenderTaskGroup(tasks as DefaultRenderTask[]));
+        if ((<AbstractRenderTask>tasks[0]).isRenderTask) {
+            this.renderGroups.push(new RenderTaskGroup(tasks as AbstractRenderTask[]));
         }
 
-        this.renderGroups.push(...(tasks as RenderTaskGroup[]));
+        this.renderGroups.push(...(tasks as AbstractRenderTaskGroup[]));
     }
 
     render (options: IRenderOptions | AbstractRenderTask): void;
