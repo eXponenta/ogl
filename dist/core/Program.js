@@ -7,13 +7,15 @@ import { nextUUID } from "./uuid.js";
 // cache of typed arrays used to flatten uniform arrays
 const arrayCacheF32 = {};
 export class Program {
-    constructor(gl, { vertex, fragment, uniforms = {}, transparent = false, cullFace = GL_ENUMS.BACK, frontFace = GL_ENUMS.CCW, depthTest = true, depthWrite = true, depthFunc = GL_ENUMS.LESS, } = {}) {
+    constructor(gl, { vertex, fragment, uniforms = {}, transparent = false, cullFace = GL_ENUMS.BACK, frontFace = GL_ENUMS.CCW, depthTest = true, depthWrite = true, depthFunc = GL_ENUMS.LESS, programData = null, } = {}) {
         this.uniforms = uniforms;
         this.id = nextUUID();
-        if (!vertex)
-            console.warn('vertex shader not supplied');
-        if (!fragment)
-            console.warn('fragment shader not supplied');
+        if (!programData) {
+            if (!vertex)
+                console.warn('vertex shader not supplied');
+            if (!fragment)
+                console.warn('fragment shader not supplied');
+        }
         // Store program state
         this.transparent = transparent;
         this.cullFace = cullFace;
@@ -23,7 +25,8 @@ export class Program {
         this.depthFunc = depthFunc;
         this.blendFunc = {};
         this.blendEquation = {};
-        this.programSource = { vertex, fragment };
+        this.programSource = vertex && fragment ? { vertex, fragment } : null;
+        this.programData = programData;
     }
     /**
      * Only for backward compatibility
@@ -86,9 +89,10 @@ export class Program {
         renderer.setBlendEquation(this.blendEquation.modeRGB, this.blendEquation.modeAlpha);
     }
     prepare({ context }) {
-        if (!this.programData || this.activeContext !== context) {
-            this.programData = ProgramData.create(context.gl, this.programSource);
+        if (!this.programData) {
+            this.programData = ProgramData.create(context, this.programSource);
         }
+        this.programData.prepare({ context });
         const locs = this.programData.uniformLocations;
         const uniforms = this.uniforms;
         for (const { uniformName } of locs.keys()) {

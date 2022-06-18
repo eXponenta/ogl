@@ -33,6 +33,7 @@ export interface IRegularTextureInit<T extends IImageSource> extends IBaseTextur
 export interface IEmptyTextureInit extends IBaseTextureInit {
     width: number;
     height: number;
+    image?: Uint8Array | Float32Array;
 }
 export declare type ITextureInit<T extends IImageSource> = IRegularTextureInit<T> | IEmptyTextureInit;
 export declare class Texture<T extends IImageSource = null> implements INativeObjectHolder {

@@ -4,36 +4,34 @@
  */
 import { nextUUID } from "./uuid.js";
 export class ProgramData {
-    constructor(gl, { vertex, fragment, }) {
+    constructor(_gl, { vertex, fragment, }) {
         this.uniformLocations = new Map();
         this.attributeLocations = new Map();
         this.usage = 0;
         this.attributeOrder = '';
-        this.gl = gl;
         this.vertex = vertex;
         this.fragment = fragment;
         this.id = (1 << 8) + nextUUID();
-        this.compile();
     }
     /**
      * Create or return already existed program data for current shaders source
      */
-    static create(gl, { vertex, fragment }) {
-        const store = ProgramData.CACHE.get(gl);
+    static create(context, { vertex, fragment }) {
+        const store = ProgramData.CACHE.get(context.gl);
         if (!store)
-            return new ProgramData(gl, { vertex, fragment });
+            return new ProgramData(null, { vertex, fragment });
         const program = store.get(vertex + fragment);
         if (!program)
-            return new ProgramData(gl, { vertex, fragment });
+            return new ProgramData(null, { vertex, fragment });
         program.usage++;
         return program;
     }
     /**
      * Store program data to cache
      */
-    static set(gl, programData) {
-        const store = this.CACHE.get(gl) || new Map();
-        ProgramData.CACHE.set(gl, store);
+    static set(context, programData) {
+        const store = this.CACHE.get(context.gl) || new Map();
+        ProgramData.CACHE.set(context.gl, store);
         if (store.has(programData.vertex + programData.fragment)) {
             console.warn('[ProgramData cache] Already have valid program data for this source:', programData.vertex, programData.fragment);
         }
@@ -54,17 +52,14 @@ export class ProgramData {
     get key() {
         return this.vertex + this.fragment;
     }
-    /**
-     * Compile or validate exist program
-     * @returns { boolean }
-     */
-    compile() {
-        const gl = this.gl;
+    prepare({ context }) {
+        this.activeContext = context;
+        const gl = this.activeContext.gl;
         const vertex = this.vertex;
         const fragment = this.fragment;
         // check that compiled program still alive
         if (this.program && gl.isProgram(this.program)) {
-            return true;
+            return;
         }
         // delete exist program for this context
         // it can be invalid
@@ -90,7 +85,7 @@ export class ProgramData {
         gl.linkProgram(program);
         if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
             console.warn(gl.getProgramInfoLog(program));
-            return false;
+            return;
         }
         // Remove shader once linked
         gl.deleteShader(vertexShader);
@@ -128,8 +123,7 @@ export class ProgramData {
         }
         this.attributeOrder = locations.join('');
         // storing only valid programs
-        ProgramData.set(gl, this);
-        return true;
+        ProgramData.set(context, this);
     }
     destroy() {
         this.remove();
@@ -137,8 +131,8 @@ export class ProgramData {
     remove() {
         this.usage--;
         if (this.usage <= 0 && this.program) {
-            this.gl.deleteProgram(this.program);
-            ProgramData.delete(this.gl, this);
+            this.activeContext.gl.deleteProgram(this.program);
+            ProgramData.delete(this.activeContext.gl, this);
         }
         this.id = -1;
         this.fragment = null;

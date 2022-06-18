@@ -1,10 +1,11 @@
 import { Program } from '../core/Program.js';
-const vertex = /* glsl */ `
+export const vertex = /* glsl */ `
     precision highp float;
     precision highp int;
 
     attribute vec3 position;
     attribute vec3 normal;
+    attribute vec2 uv;
 
     uniform mat3 normalMatrix;
     uniform mat4 modelViewMatrix;
@@ -28,11 +29,33 @@ const fragment = /* glsl */ `
         gl_FragColor.a = 1.0;
     }
 `;
-// TODO Port to es6 class
-export function NormalProgram(gl) {
-    return new Program(gl, {
-        vertex: vertex,
-        fragment: fragment,
-        cullFace: null,
-    });
+export const vertexSimpleLight = /* glsl */ `
+    precision highp float;
+    precision highp int;
+
+    attribute vec3 position;
+    attribute vec3 normal;
+    attribute vec2 uv;
+
+    uniform mat3 normalMatrix;
+    uniform mat4 modelViewMatrix;
+    uniform mat4 projectionMatrix;
+
+    varying vec3 vNormal;
+    varying vec2 vUV;
+
+    void main() {
+        vUV = uv;
+        vNormal = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+`;
+export class NormalProgram extends Program {
+    constructor(gl) {
+        super(gl, {
+            vertex: vertex,
+            fragment: fragment,
+            cullFace: null,
+        });
+    }
 }

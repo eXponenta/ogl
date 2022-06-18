@@ -2,8 +2,7 @@
  * Internal program data class, storing shader data for each Program instance
  * Used for reusing a native program for different Ogl programs without re-use of base shader.
  */
-import { IDisposable } from "./IDisposable";
-import { GLContext } from "./Renderer.js";
+import { GLContext, INativeObjectHolder, Renderer } from "./Renderer.js";
 export interface IProgramSource {
     vertex: string;
     fragment: string;
@@ -15,22 +14,22 @@ export interface IUniformActiveInfo extends WebGLActiveInfo {
     structProperty?: string;
     isStruct: boolean;
 }
-export declare class ProgramData implements IDisposable, IProgramSource {
+export declare class ProgramData implements INativeObjectHolder, IProgramSource {
     static CACHE: WeakMap<GLContext, Map<string, ProgramData>>;
     /**
      * Create or return already existed program data for current shaders source
      */
-    static create(gl: GLContext, { vertex, fragment }: IProgramSource): ProgramData;
+    static create(context: Renderer, { vertex, fragment }: IProgramSource): ProgramData;
     /**
      * Store program data to cache
      */
-    static set(gl: GLContext, programData: ProgramData): ProgramData;
+    static set(context: Renderer, programData: ProgramData): ProgramData;
     /**
      * Delete program data from cache
      */
     static delete(gl: any, programData: any): boolean;
+    activeContext: Renderer;
     readonly id: number;
-    readonly gl: GLContext;
     readonly vertex: string;
     readonly fragment: string;
     readonly uniformLocations: Map<IUniformActiveInfo, WebGLUniformLocation>;
@@ -38,13 +37,11 @@ export declare class ProgramData implements IDisposable, IProgramSource {
     program: WebGLProgram;
     usage: number;
     attributeOrder: string;
-    constructor(gl: GLContext, { vertex, fragment, }: IProgramSource);
+    constructor(_gl: GLContext, { vertex, fragment, }: IProgramSource);
     get key(): string;
-    /**
-     * Compile or validate exist program
-     * @returns { boolean }
-     */
-    compile(): boolean;
+    prepare({ context }: {
+        context: Renderer;
+    }): void;
     destroy(): void;
     remove(): void;
 }

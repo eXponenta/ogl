@@ -12,6 +12,7 @@ export interface IProgramInit<U extends string = ''> extends IProgramSource {
     depthTest: boolean;
     depthWrite: boolean;
     depthFunc: GLenum;
+    programData: ProgramData;
 }
 export declare class Program<U extends string = any> implements INativeObjectHolder {
     readonly id: number;
@@ -34,7 +35,7 @@ export declare class Program<U extends string = any> implements INativeObjectHol
     private blendFunc;
     private blendEquation;
     activeContext: Renderer;
-    constructor(gl: GLContext, { vertex, fragment, uniforms, transparent, cullFace, frontFace, depthTest, depthWrite, depthFunc, }?: Partial<IProgramInit<U>>);
+    constructor(gl: GLContext, { vertex, fragment, uniforms, transparent, cullFace, frontFace, depthTest, depthWrite, depthFunc, programData, }?: Partial<IProgramInit<U>>);
     /**
      * Only for backward compatibility
      * Internally we not should use this

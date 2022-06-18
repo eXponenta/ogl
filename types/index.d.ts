@@ -30,6 +30,8 @@ export { Skin } from './extras/Skin.js';
 export { Animation } from './extras/Animation.js';
 export { Text } from './extras/Text.js';
 export { NormalProgram } from './extras/NormalProgram.js';
+export { UnlitProgram } from './extras/UnlitProgram.js';
+export { SimpleLightProgram } from './extras/SimpleLightProgram.js';
 export { Flowmap } from './extras/Flowmap.js';
 export { GPGPU } from './extras/GPGPU.js';
 export { Polyline } from './extras/Polyline.js';

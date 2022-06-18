@@ -466,7 +466,7 @@ export class GLTFLoader {
         extras, // optional
          }) => {
             // TODO: materials
-            const program = NormalProgram(gl);
+            const program = new NormalProgram(gl);
             if (materialIndex != null) {
                 program.gltfMaterial = materials[materialIndex];
             }
