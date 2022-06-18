@@ -377,6 +377,7 @@ export class Renderer {
 
         if ((<AbstractRenderTask>tasks[0]).isRenderTask) {
             this.renderGroups.push(new RenderTaskGroup(tasks as AbstractRenderTask[]));
+            return;
         }
 
         this.renderGroups.push(...(tasks as AbstractRenderTaskGroup[]));

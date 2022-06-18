@@ -255,6 +255,7 @@ export class Renderer {
         this.renderGroups.length = 0;
         if (tasks[0].isRenderTask) {
             this.renderGroups.push(new RenderTaskGroup(tasks));
+            return;
         }
         this.renderGroups.push(...tasks);
     }
