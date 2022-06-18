@@ -14,17 +14,16 @@ export const vertex = /* glsl */ `
 
     uniform mat3 normalMatrix;
     uniform mat4 modelViewMatrix;
-    uniform mat4 modelMatrix;
+    uniform mat4 viewMatrix;
     uniform mat4 projectionMatrix;
 
     varying vec3 vNormal;
-    varying vec3 vPos;
+    varying vec3 vLight;
     varying vec2 vUV;
 
     void main() {
         vUV = uv;
-        vNormal = normalize(normalMatrix * normal);
-        vPos = vec3(modelMatrix * vec4(position, 1.0));
+        vNormal = normalMatrix * normal;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }
 `;
@@ -35,20 +34,22 @@ export const fragment = /* glsl */ `
 
     varying vec2 vUV;
     varying vec3 vNormal;
-    varying vec3 vPos;
+    varying vec3 vLight;
+
 
     uniform sampler2D uTexture;
     uniform vec3 uTint;
-    uniform vec3 uLightPos;
     uniform vec3 uAmbientColor;
+    uniform vec3 uLightColor;
+    uniform vec3 uLightPos;
 
     void main() {
         vec4 color = texture2D(uTexture, vUV);
         vec3 norm = normalize(vNormal);
-        vec3 lightDir = normalize(uLightPos - vPos);
+        vec3 lightDir = normalize(uLightPos);
 
         float diff = max(dot(norm, lightDir), 0.0);
-        vec3 diffuse = diff * uAmbientColor;
+        vec3 diffuse = diff * uLightColor;
 
         color.rgb *= (uAmbientColor + diffuse) * uTint;
 

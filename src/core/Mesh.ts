@@ -91,7 +91,9 @@ export class Mesh<G extends Geometry = Geometry, P extends Program = Program> ex
             // Set the matrix uniforms
 
             this.modelViewMatrix.multiply(camera.viewMatrix, this.worldMatrix);
-            this.normalMatrix.getNormalMatrix(this.modelViewMatrix);
+            // normal matrix is part of model
+            // not part of modelView
+            this.normalMatrix.getNormalMatrix(this.worldMatrix);
         }
 
         // determine if faces need to be flipped - when mesh scaled negatively
