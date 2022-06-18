@@ -2,24 +2,12 @@
 // TODO: use texSubImage2D for updates (video or when loaded)
 // TODO: need? encoding = linearEncoding
 // TODO: support non-compressed mipmaps uploads
-var __rest = (this && this.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-};
 import { GL_ENUMS } from "./Renderer.js";
 import { nextUUID } from "./uuid.js";
 const emptyPixel = new Uint8Array(4);
 const isPowerOf2 = (value) => (value & (value - 1)) === 0;
 export class Texture {
-    constructor(_gl, _a = {}) {
-        var { target = GL_ENUMS.TEXTURE_2D, type = GL_ENUMS.UNSIGNED_BYTE, format = GL_ENUMS.RGBA, internalFormat = format, wrapS = GL_ENUMS.CLAMP_TO_EDGE, wrapT = GL_ENUMS.CLAMP_TO_EDGE, generateMipmaps = true, minFilter = generateMipmaps ? GL_ENUMS.NEAREST_MIPMAP_LINEAR : GL_ENUMS.LINEAR, magFilter = GL_ENUMS.LINEAR, premultiplyAlpha = false, unpackAlignment = 4, flipY = target == GL_ENUMS.TEXTURE_2D ? true : false, anisotropy = 0, level = 0 } = _a, other = __rest(_a, ["target", "type", "format", "internalFormat", "wrapS", "wrapT", "generateMipmaps", "minFilter", "magFilter", "premultiplyAlpha", "unpackAlignment", "flipY", "anisotropy", "level"]);
+    constructor(_gl, { target = GL_ENUMS.TEXTURE_2D, type = GL_ENUMS.UNSIGNED_BYTE, format = GL_ENUMS.RGBA, internalFormat = format, wrapS = GL_ENUMS.CLAMP_TO_EDGE, wrapT = GL_ENUMS.CLAMP_TO_EDGE, generateMipmaps = true, minFilter = generateMipmaps ? GL_ENUMS.NEAREST_MIPMAP_LINEAR : GL_ENUMS.LINEAR, magFilter = GL_ENUMS.LINEAR, premultiplyAlpha = false, unpackAlignment = 4, flipY = target == GL_ENUMS.TEXTURE_2D ? true : false, anisotropy = 0, level = 0, ...other } = {}) {
         this.needsUpdate = false;
         this.textureUnit = 0;
         this.id = nextUUID();

@@ -2,7 +2,7 @@
     "compilerOptions": {
       "allowJs": true,
       "outDir": "./dist",
-      "target": "es2017",
+      "target": "ES2018",
       "module": "ESNext",
       "lib": ["ESNext", "dom"],
       "moduleResolution": "node",

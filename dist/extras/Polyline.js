@@ -30,7 +30,15 @@ export class Polyline {
             index.set([ind + 0, ind + 1, ind + 2], (ind + 0) * 3);
             index.set([ind + 2, ind + 1, ind + 3], (ind + 1) * 3);
         }
-        const geometry = (this.geometry = new Geometry(gl, attributes = Object.assign(Object.assign({}, attributes), { position: { size: 3, data: this.position }, prev: { size: 3, data: this.prev }, next: { size: 3, data: this.next }, side: { size: 1, data: side }, uv: { size: 2, data: uv }, index: { size: 1, data: index } })));
+        const geometry = (this.geometry = new Geometry(gl, attributes = {
+            ...attributes,
+            position: { size: 3, data: this.position },
+            prev: { size: 3, data: this.prev },
+            next: { size: 3, data: this.next },
+            side: { size: 1, data: side },
+            uv: { size: 2, data: uv },
+            index: { size: 1, data: index },
+        }));
         // Populate dynamic buffers
         this.updateGeometry();
         if (!uniforms.uResolution)

@@ -51,7 +51,10 @@ export class RenderTarget {
         // only for references
         // because context is missed - texture can't prepared
         for (let i = 0; i < color; i++) {
-            this.textures[i] = this._attachTexture(null, Object.assign(Object.assign({}, this.options), { attachment: GL_ENUMS.COLOR_ATTACHMENT0 + i }));
+            this.textures[i] = this._attachTexture(null, {
+                ...this.options,
+                attachment: GL_ENUMS.COLOR_ATTACHMENT0 + i,
+            });
         }
     }
     get texture() {
@@ -74,7 +77,12 @@ export class RenderTarget {
     _attachTexture(context, options) {
         const { format, attachment, target, width, height } = options;
         const key = `${format}${target}${attachment}`;
-        const texture = this._attachmentsStorage.get(key) || new Texture(null, Object.assign(Object.assign({}, options), { flipY: false, generateMipmaps: false, target: GL_ENUMS.TEXTURE_2D }));
+        const texture = this._attachmentsStorage.get(key) || new Texture(null, {
+            ...options,
+            flipY: false,
+            generateMipmaps: false,
+            target: GL_ENUMS.TEXTURE_2D,
+        });
         texture.setSize(width, height);
         if (context) {
             const { gl } = context;
@@ -103,7 +111,10 @@ export class RenderTarget {
         context.bindFramebuffer(this);
         // create and attach required num of color textures
         for (let i = 0; i < options.color; i++) {
-            const t = this._attachTexture(context, Object.assign(Object.assign({}, options), { attachment: GL_ENUMS.COLOR_ATTACHMENT0 + i }));
+            const t = this._attachTexture(context, {
+                ...options,
+                attachment: GL_ENUMS.COLOR_ATTACHMENT0 + i,
+            });
             this.textures[i] = t;
             activeAttachments.push(t);
             drawBuffers.push(gl.COLOR_ATTACHMENT0 + i);
@@ -133,7 +144,12 @@ export class RenderTarget {
                     : options.stencil ? 'stencil'
                         : null;
             if (storageType) {
-                const renderBuffer = this._attachRenderBuffer(context, Object.assign({ target: this.target, width: this.width, height: this.height }, RENDER_BUFFER_FORMATS[storageType]));
+                const renderBuffer = this._attachRenderBuffer(context, {
+                    target: this.target,
+                    width: this.width,
+                    height: this.height,
+                    ...RENDER_BUFFER_FORMATS[storageType]
+                });
                 for (const key in RENDER_BUFFER_FORMATS) {
                     this[key + 'Buffer'] = key === storageType ? renderBuffer : null;
                 }
